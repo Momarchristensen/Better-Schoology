@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/logo.svg" />
+    <title>Calendar</title>
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/assignments-search.css" />
+    <script src="/app.js"></script>
+    <style>
+        .home-toolbar {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .home-toolbar #assignments-search {
+            flex: 0 1 480px;
+            min-width: 0;
+            width: min(100%, 480px);
+        }
+
+        .home-toolbar .search-bar {
+            max-width: none;
+        }
+
+        .page-actions {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: 12px;
+            min-height: 36px;
+            margin-bottom: 4px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin: 0;
+        }
+
+        .main-layout {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: row;
+            gap: 18px;
+            min-width: 0;
+            min-height: 0;
+            width: 100%;
+        }
+
+        .calendar-section {
+            flex: 1 1 auto;
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-header {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .calendar-title {
+            font-size: 1.5rem;
+            color: var(--text-strong);
+            min-width: 11ch;
+        }
+
+        .calendar-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .calendar-button {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-strong);
+            cursor: pointer;
+            font: inherit;
+            padding: 6px 12px;
+            transition:
+                color 0.25s ease,
+                border-color 0.25s ease;
+        }
+
+        .calendar-button:hover,
+        .calendar-button:focus-visible {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .calendar-export {
+            margin-left: auto;
+        }
+
+        .calendar-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 2px;
+        }
+
+        .calendar-weekdays,
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+        }
+
+        .calendar-weekdays {
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .calendar-day {
+            background: rgb(255 255 255 / 9%);
+            border: 1px solid rgb(148 163 184 / 40%);
+            border-radius: var(--radius-sm);
+            box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+            color: var(--text);
+            min-height: 110px;
+            padding: 6px;
+            font-size: 0.85rem;
+            overflow: hidden;
+        }
+
+        .calendar-day--other {
+            background: rgb(255 255 255 / 4%);
+            border-color: var(--border);
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        .calendar-day--today {
+            background: rgb(79 140 255 / 16%);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--focus-ring);
+        }
+
+        .calendar-day-number {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .calendar-day--today .calendar-day-number {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .calendar-item {
+            display: block;
+            margin-top: 3px;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            background: rgb(79 140 255 / 24%);
+            border-left: 3px solid var(--accent);
+            color: var(--text-strong);
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background var(--motion-duration) var(--motion-easing);
+        }
+
+        .calendar-item:hover {
+            background: rgb(79 140 255 / 38%);
+        }
+
+        .calendar-item--overdue {
+            background: rgb(248 113 113 / 24%);
+            border-left-color: var(--overdue);
+        }
+
+        .calendar-item--overdue:hover {
+            background: rgb(248 113 113 / 38%);
+        }
+
+        .loading {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .calendar-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .calendar-scroll::-webkit-scrollbar-thumb {
+            background: var(--surface-strong);
+            border-radius: 999px;
+        }
+
+        .logout-button {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: #d93025;
+            cursor: pointer;
+            font: inherit;
+            padding: 6px 12px;
+            transition:
+                color 0.25s ease,
+                border-color 0.25s ease;
+        }
+
+        .logout-button:hover,
+        .logout-button:focus-visible {
+            color: #b3261e;
+            border-color: #b3261e;
+        }
+
+        .logout-button:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        @media (width <=720px) {
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .calendar-scroll {
+                overflow: visible;
+            }
+
+            .calendar-day {
+                min-height: 70px;
+                padding: 4px;
+            }
+
+            .home-toolbar .page-actions {
+                margin-left: auto;
+            }
+        }
+    </style>
+</head>
+
+<body class="app-page app-page--dashboard">
+    <div class="home-toolbar">
+        <div id="assignments-search"></div>
+
+        <nav class="page-actions" aria-label="Page actions">
+            <a class="settings-link" href="/home">Home</a>
+            <a class="settings-link" href="/settings">Settings</a>
+            <button type="button" id="logout-button" class="logout-button">
+                Log out
+            </button>
+        </nav>
+    </div>
+
+    <div class="main-layout">
+        <section class="calendar-section">
+            <div class="calendar-header">
+                <h2 id="month-title" class="calendar-title"></h2>
+                <div class="calendar-controls">
+                    <button type="button" id="prev-month" class="calendar-button"
+                        aria-label="Previous month">&lt;</button>
+                    <button type="button" id="today-button" class="calendar-button">Today</button>
+                    <button type="button" id="next-month" class="calendar-button" aria-label="Next month">&gt;</button>
+                </div>
+                <a class="settings-link calendar-export" href="/api/calendar.ics">Export .ics</a>
+            </div>
+
+            <div id="loading" class="loading">Loading...</div>
+
+            <div class="calendar-scroll">
+                <div class="calendar-weekdays" aria-hidden="true">
+                    <div>Sun</div>
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div>Sat</div>
+                </div>
+                <div id="calendar-grid" class="calendar-grid"></div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/assignments-search.js"></script>
+    <script>
+        const calendarGridElement = document.getElementById("calendar-grid")
+        const monthTitleElement = document.getElementById("month-title")
+        const loadingTextElement = document.getElementById("loading")
+
+        let calendarItems = new Map()
+        let viewDate = startOfMonth(new Date())
+
+        const items = fetchCalendarItems()
+        init()
+        window.initAssignmentsSearch({ mountId: "assignments-search" })
+
+        async function init() {
+            loadingTextElement.textContent = "Loading..."
+
+            const itemList = await items
+
+            if (itemList) {
+                calendarItems = groupByDay(itemList)
+            }
+
+            renderCalendar()
+
+            loadingTextElement.textContent = ""
+            loadingTextElement.style.display = "none"
+        }
+
+        function normalizeItem(material, overdue) {
+            const sectionId = material.parent?.section_id
+            const folderId = material.parent?.folder_id || "root"
+
+            return {
+                title: material.title || "Untitled",
+                due: material.dueDate ? new Date(material.dueDate) : new Date(NaN),
+                url: `/section/${sectionId}/folder/${folderId}/material/${material.id}`,
+                overdue,
+            }
+        }
+
+        async function fetchMaterials(url, overdue) {
+            let attemptCount = 0
+
+            while (true) {
+                try {
+                    const response = await fetchWithRetry(url)
+                    const data = await response.json()
+
+                    if (data.status === "error") {
+                        loadingTextElement.textContent = "Failed to load assignments."
+                        console.error(data.message)
+                        return []
+                    }
+
+                    return (data.materials || []).map((material) =>
+                        normalizeItem(material, overdue),
+                    )
+                }
+                catch (error) {
+                    attemptCount++
+                    loadingTextElement.textContent = `${attemptCount > 1 ? `Attempt ${attemptCount}: ` : ""}Failed to load assignments. Retrying...`
+                    console.error("Error fetching assignments:", error)
+                }
+            }
+        }
+
+        async function fetchCalendarItems() {
+            const [upcoming, overdue] = await Promise.all([
+                fetchMaterials("/api/upcoming", false),
+                fetchMaterials("/api/overdue", true),
+            ])
+
+            return [...upcoming, ...overdue].filter(
+                (item) => !Number.isNaN(item.due.getTime()),
+            )
+        }
+
+        function startOfMonth(date) {
+            return new Date(date.getFullYear(), date.getMonth(), 1)
+        }
+
+        function groupByDay(itemList) {
+            const grouped = new Map()
+
+            for (const item of itemList) {
+                const key = item.due.toDateString()
+
+                if (!grouped.has(key)) {
+                    grouped.set(key, [])
+                }
+
+                grouped.get(key).push(item)
+            }
+
+            for (const dayItems of grouped.values()) {
+                dayItems.sort((itemOne, itemTwo) => itemOne.due - itemTwo.due)
+            }
+
+            return grouped
+        }
+
+        function renderCalendar() {
+            calendarGridElement.innerHTML = ""
+
+            monthTitleElement.textContent = viewDate.toLocaleString(undefined, {
+                month: "long",
+                year: "numeric",
+            })
+
+            const dayTemplate = document.getElementById("day-template")
+            const itemTemplate = document.getElementById("item-template")
+            const todayKey = new Date().toDateString()
+
+            const firstCell = new Date(viewDate)
+            firstCell.setDate(1 - viewDate.getDay())
+
+            for (let index = 0; index < 42; index++) {
+                const date = new Date(firstCell)
+                date.setDate(firstCell.getDate() + index)
+
+                const dayClone = dayTemplate.content.cloneNode(true)
+                const dayElement = dayClone.querySelector(".calendar-day")
+                const dayNumber = dayClone.querySelector(".calendar-day-number")
+
+                dayNumber.textContent = date.getDate()
+
+                if (date.getMonth() !== viewDate.getMonth()) {
+                    dayElement.classList.add("calendar-day--other")
+                }
+
+                if (date.toDateString() === todayKey) {
+                    dayElement.classList.add("calendar-day--today")
+                }
+
+                for (const item of calendarItems.get(date.toDateString()) || []) {
+                    const itemClone = itemTemplate.content.cloneNode(true)
+                    const itemLink = itemClone.querySelector(".calendar-item")
+
+                    const time = item.due.toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                    })
+
+                    itemLink.textContent = `${time} ${item.title}`
+                    itemLink.title = item.title
+                    itemLink.href = item.url
+
+                    if (item.overdue) {
+                        itemLink.classList.add("calendar-item--overdue")
+                    }
+
+                    dayElement.appendChild(itemClone)
+                }
+
+                calendarGridElement.appendChild(dayClone)
+            }
+        }
+
+        function changeMonth(offset) {
+            viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + offset, 1)
+            renderCalendar()
+        }
+
+        async function logout() {
+            const button = document.getElementById("logout-button")
+            button.disabled = true
+
+            try {
+                const response = await fetch("/api/logout", {
+                    method: "POST",
+                })
+
+                const data = await response.json()
+
+                if (data.status === "ok") {
+                    window.location.href = "/login"
+                    return
+                }
+
+                console.error("Logout failed:", data.message)
+            }
+            catch (error) {
+                console.error("Error logging out:", error)
+            }
+
+            button.disabled = false
+        }
+
+        document
+            .getElementById("prev-month")
+            .addEventListener("click", () => changeMonth(-1))
+        document
+            .getElementById("next-month")
+            .addEventListener("click", () => changeMonth(1))
+        document
+            .getElementById("today-button")
+            .addEventListener("click", () => {
+                viewDate = startOfMonth(new Date())
+                renderCalendar()
+            })
+        document
+            .getElementById("logout-button")
+            .addEventListener("click", logout)
+    </script>
+
+    <template id="day-template">
+        <div class="calendar-day">
+            <span class="calendar-day-number"></span>
+        </div>
+    </template>
+
+    <template id="item-template">
+        <a class="calendar-item"></a>
+    </template>
+</body>
+
+</html>

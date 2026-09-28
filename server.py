@@ -14,6 +14,7 @@ from fastapi.responses import (
     StreamingResponse,
     Response as FastAPIResponse,
 )
+from datetime import datetime, timedelta, timezone
 from fastapi.concurrency import run_in_threadpool
 import os
 from urllib.parse import quote, urlparse, unquote_plus
@@ -48,7 +49,7 @@ from updater import check_for_updates
 
 if getattr(sys, "frozen", False):
     resource_dir = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
-    data_dir = Path(tempfile.gettempdir()) / "Better-Schoology"
+    data_dir = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") / "Better-Schoology"
 else:
     resource_dir = Path(__file__).resolve().parent
     data_dir = resource_dir
@@ -956,6 +957,49 @@ async def home_page(request: Request):
 
     return serve_html_file("home.html")
 
+@app.get("/calendar")
+async def calendar_page(request: Request):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not await session_token_is_valid(token):
+        return RedirectResponse(url=login_redirect_url(request))
+    return serve_html_file("calendar.html")
+
+
+
+
+def _ics_text(s) -> str:
+    return (str(s).replace("\\", "\\\\").replace(";", "\\;")
+            .replace(",", "\\,").replace("\n", "\\n"))
+
+@app.get("/api/calendar.ics")
+async def api_calendar_ics(request: Request):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not token:
+        raise HTTPException(status_code=401, detail="No session token")
+
+    materials = await get_upcoming_materials(token, None)
+    now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Better Schoology//EN"]
+    for m in materials:
+        due = datetime.fromisoformat(str(m["dueDate"]))         # <-- adjust key and format
+        if due.tzinfo is None:
+            due = due.astimezone()                           # treat naive times as local
+        due = due.astimezone(timezone.utc)
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{m['id']}@better-schoology",                # <-- adjust key
+            f"DTSTAMP:{now}",
+            f"DTSTART:{due.strftime('%Y%m%dT%H%M%SZ')}",
+            f"DTEND:{(due + timedelta(minutes=30)).strftime('%Y%m%dT%H%M%SZ')}",
+            f"SUMMARY:{_ics_text(m.get('title', 'Assignment'))}",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    return FastAPIResponse(
+        content="\r\n".join(lines) + "\r\n",
+        media_type="text/calendar",
+        headers={"Content-Disposition": 'attachment; filename="schoology.ics"'},
+    )
 
 @app.get("/settings")
 async def settings_page(request: Request):
