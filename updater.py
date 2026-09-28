@@ -7,6 +7,9 @@ from typing import Optional
 import shutil
 import httpx
 import certifi
+from tqdm import tqdm
+
+
 
 REPO = "Momarchristensen/Better-Schoology"
 GITHUB_API_LATEST = f"https://api.github.com/repos/{REPO}/releases/latest"
@@ -29,9 +32,9 @@ MAIN_EXE_NAME = "Better-Schoology.exe"
 print("Running version:", __version__)
 
 
-def _parse_version(v: str) -> tuple:
+def _parse_version(version: str) -> tuple:
     parts = []
-    for p in v.strip().lstrip("vV").split("."):
+    for p in version.strip().lstrip("vV").split("."):
         num = ""
         for ch in p:
             if not ch.isdigit():
@@ -128,11 +131,23 @@ def download_update(download_url: str, dest_path: Path, timeout: float = 60):
             headers=DOWNLOAD_HEADERS,
             follow_redirects=True,
             timeout=timeout,
-        ) as r:
-            r.raise_for_status()
-            with open(temp_path, "wb") as f:
-                for chunk in r.iter_bytes(chunk_size=1024 * 256):
-                    f.write(chunk)
+        ) as response:
+            response.raise_for_status()
+            total = int(response.headers.get("Content-Length", 0)) or None
+
+            with open(temp_path, "wb") as file, tqdm(
+                total=total,
+                unit="B",
+                unit_scale=True,
+                unit_divisor=1024,
+                desc="Downloading update",
+                disable=sys.stderr is None,
+            ) as bar:
+                last = response.num_bytes_downloaded
+                for chunk in response.iter_bytes(chunk_size=1024 * 256):
+                    file.write(chunk)
+                    bar.update(response.num_bytes_downloaded - last)
+                    last = response.num_bytes_downloaded
 
         _validate_exe_file(temp_path)
         temp_path.replace(dest_path)
