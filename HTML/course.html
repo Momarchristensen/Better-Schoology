@@ -2,1775 +2,1751 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/logo.svg" />
-    <title>Course</title>
-    <link rel="stylesheet" href="/app.css" />
-    <link rel="stylesheet" href="/assignments-sidebar.css" />
-    <link rel="stylesheet" href="/assignments-search.css" />
-    <script src="/app.js"></script>
-    <style>
-        :root {
-            --tree-line: rgb(148, 163, 184, 35%);
-            --loading-soft: rgb(148, 163, 184, 75%);
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/logo.svg" />
+  <title>Course</title>
+  <link rel="stylesheet" href="/app.css" />
+  <link rel="stylesheet" href="/assignments-sidebar.css" />
+  <link rel="stylesheet" href="/assignments-search.css" />
+  <script src="/app.js"></script>
+  <script src="/back.js"></script>
+  <style>
+    :root {
+      --tree-line: rgb(148 163 184 / 35%);
+      --loading-soft: rgb(148 163 184 / 75%);
+    }
 
-        .course-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            width: 100%;
-            margin-bottom: 18px;
-        }
+    .course-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      width: 100%;
+      margin-bottom: 18px;
+    }
 
-        .course-toolbar-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1 1 auto;
-            min-width: 0;
-        }
+    .course-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
 
-        .course-toolbar #assignments-search {
-            flex: 0 1 480px;
-            min-width: 0;
-            width: min(100%, 480px);
-        }
+    .course-toolbar #assignments-search {
+      flex: 0 1 480px;
+      min-width: 0;
+      width: min(100%, 480px);
+    }
 
-        .course-toolbar .search-bar {
-            max-width: none;
-            margin: 0;
-        }
+    .course-toolbar .search-bar {
+      max-width: none;
+      margin: 0;
+    }
 
-        .course-toolbar .page-actions {
-            display: flex;
-            flex: 0 0 auto;
-            align-items: center;
-            gap: 10px;
-            min-height: 36px;
-        }
+    .course-toolbar .page-actions {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 36px;
+    }
 
-        .main-layout {
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: row;
-            align-items: flex-start;
-            gap: 18px;
-            min-width: 0;
-            min-height: 0;
-            width: 100%;
-        }
+    .main-layout {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 18px;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+    }
 
-        .main-layout>.assignments-panel {
-            align-self: flex-start;
-            height: calc(100vh - 120px);
-        }
+    .main-layout>.assignments-panel {
+      align-self: flex-start;
+      height: calc(100vh - 120px);
+    }
 
-        .page {
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            min-height: 0;
-            overflow: hidden;
-            align-self: flex-start;
-            height: calc(100vh - 120px);
-            width: min(1200px, calc(100% - 32px));
-            margin: 0 auto;
-        }
+    .page {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      align-self: flex-start;
+      height: calc(100vh - 120px);
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+    }
 
-        @media (width <=720px) {
-            body {
-                overflow: auto;
-            }
+    @media (width <=720px) {
+      body {
+        overflow: auto;
+      }
 
-            .main-layout {
-                flex-direction: column;
-            }
+      .main-layout {
+        flex-direction: column;
+      }
 
-            .main-layout>.assignments-panel {
-                height: auto;
-            }
+      .main-layout>.assignments-panel {
+        height: auto;
+      }
 
-            .page {
-                overflow: visible;
-                height: auto;
-            }
+      .page {
+        overflow: visible;
+        height: auto;
+      }
 
-            .tree-list,
-            .explorer-view {
-                flex: 0 1 auto;
-                max-height: 58vh;
-            }
+      .tree-list,
+      .explorer-view {
+        flex: 0 1 auto;
+        max-height: 58vh;
+      }
 
-            .explorer-list {
-                max-height: 58vh;
-            }
+      .explorer-list {
+        max-height: 58vh;
+      }
 
-            .course-toolbar .page-actions {
-                margin-left: auto;
-            }
-        }
+      .course-toolbar .page-actions {
+        margin-left: auto;
+      }
+    }
 
-        @media (width <=480px) {
+    @media (width <=480px) {
 
-            .course-toolbar,
-            .course-toolbar-left,
-            .page-header,
-            .page-header-controls {
-                align-items: stretch;
-                flex-direction: column;
-            }
+      .course-toolbar,
+      .course-toolbar-left,
+      .page-header,
+      .page-header-controls {
+        align-items: stretch;
+        flex-direction: column;
+      }
 
-            .course-toolbar-left,
-            .course-toolbar #assignments-search {
-                flex: 0 0 auto;
-                width: 100%;
-            }
+      .course-toolbar-left,
+      .course-toolbar #assignments-search {
+        flex: 0 0 auto;
+        width: 100%;
+      }
 
-            .course-toolbar .back-btn,
-            .course-toolbar .page-actions,
-            .page-header-controls,
-            .sort-dropdown,
-            .sort-select-btn,
-            .view-toggle {
-                width: 100%;
-            }
+      .course-toolbar .back-btn,
+      .course-toolbar .page-actions,
+      .page-header-controls,
+      .sort-dropdown,
+      .sort-select-btn,
+      .view-toggle {
+        width: 100%;
+      }
 
-            .sort-select-btn,
-            .view-btn {
-                justify-content: space-between;
-            }
+      .sort-select-btn,
+      .view-btn {
+        justify-content: space-between;
+      }
 
-            .view-toggle {
-                display: flex;
-            }
+      .view-toggle {
+        display: flex;
+      }
 
-            .view-btn {
-                flex: 1 1 0;
-            }
+      .view-btn {
+        flex: 1 1 0;
+      }
 
-            .sort-select-menu {
-                left: 0;
-                right: 0;
-            }
+      .sort-select-menu {
+        left: 0;
+        right: 0;
+      }
 
-            .material-icon {
-                width: 38px;
-                font-size: 26px;
-            }
-        }
+      .material-icon {
+        width: 38px;
+        font-size: 26px;
+      }
+    }
 
-        h1 {
-            margin: 0 0 18px;
-            color: var(--text-strong);
-            font-size: clamp(1.8rem, 3vw, 2.5rem);
-            line-height: 1.15;
-            letter-spacing: -0.03em;
-        }
+    h1 {
+      margin: 0 0 18px;
+      color: var(--text-strong);
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
 
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 12px;
-            padding: 8px 14px;
-            border-radius: 12px;
-            background: var(--surface-strong);
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition:
-                background 0.18s ease,
-                transform 0.18s ease,
-                border-color 0.18s ease;
-            width: fit-content;
-        }
+    .course-toolbar .back-btn {
+      margin-bottom: 0;
+      padding: 8px 14px;
+    }
 
-        .course-toolbar .back-btn {
-            margin-bottom: 0;
-            padding: 8px 14px;
-        }
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      flex: 0 0 auto;
+      margin-bottom: 10px;
+    }
 
-        .back-btn:hover {
-            background: rgb(255, 255, 255, 10%);
-            border-color: rgb(148, 163, 184, 28%);
-            transform: translateY(-1px);
-        }
+    .page-header h1 {
+      margin: 0;
+    }
 
-        .page-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            flex-wrap: wrap;
-            flex: 0 0 auto;
-            margin-bottom: 10px;
-        }
-
-        .page-header h1 {
-            margin: 0;
-        }
-
-        /* Explorer mode: the breadcrumb already shows "Course Materials",
+    /* Explorer mode: the breadcrumb already shows "Course Materials",
            so hide the duplicate heading and keep only the controls. */
-        .page.explorer-mode .page-header h2 {
-            display: none;
-        }
+    .page.explorer-mode .page-header h2 {
+      display: none;
+    }
 
-        .page.explorer-mode .page-header {
-            justify-content: flex-end;
-        }
+    .page.explorer-mode .page-header {
+      justify-content: flex-end;
+    }
 
-        .page-header-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-            flex-wrap: wrap;
-            min-width: 0;
-        }
+    .page-header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
 
-        .sort-dropdown {
-            position: relative;
-        }
+    .sort-dropdown {
+      position: relative;
+    }
 
-        .sort-select-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-family: var(--font-family);
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 8px 12px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition:
-                background 0.18s ease,
-                border-color 0.18s ease;
-        }
+    .sort-select-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-family);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition:
+        background 0.18s ease,
+        border-color 0.18s ease;
+    }
 
-        .sort-select-btn:hover {
-            background: rgb(255, 255, 255, 6%);
-        }
+    .sort-select-btn:hover {
+      background: rgb(255 255 255 / 6%);
+    }
 
-        .sort-select-btn:focus-visible {
-            outline: 1px solid var(--accent);
-        }
+    .sort-select-btn:focus-visible {
+      outline: 1px solid var(--accent);
+    }
 
-        .sort-select-btn .sort-caret {
-            width: 7px;
-            height: 7px;
-            flex-shrink: 0;
-            border-right: 2px solid var(--muted);
-            border-bottom: 2px solid var(--muted);
-            transform: rotate(45deg) translateY(-2px);
-            transition: transform 0.18s ease;
-        }
+    .sort-select-btn .sort-caret {
+      width: 7px;
+      height: 7px;
+      flex-shrink: 0;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg) translateY(-2px);
+      transition: transform 0.18s ease;
+    }
 
-        .sort-select-btn[aria-expanded="true"] .sort-caret {
-            transform: rotate(225deg) translateY(-2px);
-        }
+    .sort-select-btn[aria-expanded="true"] .sort-caret {
+      transform: rotate(225deg) translateY(-2px);
+    }
 
-        .sort-select-menu {
-            position: absolute;
-            top: calc(100% + 6px);
-            right: 0;
-            z-index: 20;
-            min-width: 180px;
-            margin: 0;
-            padding: 6px;
-            list-style: none;
-            background: var(--bg-strong);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            box-shadow: var(--shadow);
-        }
+    .sort-select-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      z-index: 20;
+      min-width: 180px;
+      margin: 0;
+      padding: 6px;
+      list-style: none;
+      background: var(--bg-strong);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+    }
 
-        .sort-select-option {
-            padding: 8px 10px;
-            border-radius: 8px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: var(--text);
-            cursor: pointer;
-            transition:
-                background 0.15s ease,
-                color 0.15s ease;
-        }
+    .sort-select-option {
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      transition:
+        background 0.15s ease,
+        color 0.15s ease;
+    }
 
-        .sort-select-option:hover {
-            background: rgb(255, 255, 255, 8%);
-        }
+    .sort-select-option:hover {
+      background: rgb(255 255 255 / 8%);
+    }
 
-        .sort-select-option.selected {
-            background: var(--accent-soft);
-            color: var(--text-strong);
-        }
+    .sort-select-option.selected {
+      background: var(--accent-soft);
+      color: var(--text-strong);
+    }
 
-        .view-toggle {
-            display: inline-flex;
-            padding: 4px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            gap: 4px;
-            flex-shrink: 0;
-            max-width: 100%;
-            flex-wrap: wrap;
-        }
+    .view-toggle {
+      display: inline-flex;
+      padding: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      gap: 4px;
+      flex-shrink: 0;
+      max-width: 100%;
+      flex-wrap: wrap;
+    }
 
-        .view-btn {
-            appearance: none;
-            border: none;
-            background: transparent;
-            color: var(--muted);
-            font-family: var(--font-family);
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 7px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition:
-                background 0.18s ease,
-                color 0.18s ease;
-            min-width: 0;
-        }
+    .view-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--font-family);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition:
+        background 0.18s ease,
+        color 0.18s ease;
+      min-width: 0;
+    }
 
-        .view-btn:hover {
-            color: var(--text);
-            background: rgb(255, 255, 255, 6%);
-        }
+    .view-btn:hover {
+      color: var(--text);
+      background: rgb(255 255 255 / 6%);
+    }
 
-        .view-btn.active {
-            background: var(--accent-soft);
-            color: var(--text-strong);
-        }
+    .view-btn.active {
+      background: var(--accent-soft);
+      color: var(--text-strong);
+    }
 
-        /* Grid layout: toolbar and breadcrumb share the first row,
+    /* Grid layout: toolbar and breadcrumb share the first row,
            the list (or loading / empty message) fills the second row. */
-        .explorer-view {
-            flex: 1 1 auto;
-            min-height: 0;
-            display: grid;
-            grid-template-columns: auto minmax(0, 1fr);
-            grid-template-rows: auto minmax(0, 1fr);
-            column-gap: 8px;
-            overflow: hidden;
-            width: 100%;
-        }
+    .explorer-view {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+      column-gap: 8px;
+      overflow: hidden;
+      width: 100%;
+    }
 
-        .explorer-toolbar {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 8px;
-        }
+    .explorer-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
 
-        .breadcrumb {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-            min-width: 0;
-            min-height: 34px;
-            padding: 4px 12px;
-            margin-bottom: 8px;
-            box-sizing: border-box;
-            background: var(--surface-soft);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            font-size: 0.9rem;
-        }
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+      min-height: 34px;
+      padding: 4px 12px;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+    }
 
-        .toolbar-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 34px;
-            border-radius: var(--radius-sm);
-            background: var(--surface-strong);
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-size: 1rem;
-            line-height: 1;
-            cursor: pointer;
-            font-family: var(--font-family);
-            transition:
-                background 0.18s ease,
-                transform 0.18s ease,
-                border-color 0.18s ease;
-        }
+    .toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      font-family: var(--font-family);
+      transition:
+        background 0.18s ease,
+        transform 0.18s ease,
+        border-color 0.18s ease;
+    }
 
-        .toolbar-btn:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-            transform: none;
-        }
+    .toolbar-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
 
-        .toolbar-btn:hover:not(:disabled) {
-            background: rgb(255, 255, 255, 10%);
-            border-color: rgb(148, 163, 184, 28%);
-        }
+    .toolbar-btn:hover:not(:disabled) {
+      background: rgb(255 255 255 / 10%);
+      border-color: rgb(148 163 184 / 28%);
+    }
 
-        .breadcrumb-item {
-            color: var(--muted);
-        }
+    .breadcrumb-item {
+      color: var(--muted);
+    }
 
-        .breadcrumb-link {
-            cursor: pointer;
-            color: var(--accent);
-        }
+    .breadcrumb-link {
+      cursor: pointer;
+      color: var(--accent);
+    }
 
-        .breadcrumb-link:hover {
-            text-decoration: underline;
-        }
+    .breadcrumb-link:hover {
+      text-decoration: underline;
+    }
 
-        .breadcrumb-current {
-            color: var(--text-strong);
-            font-weight: 600;
-        }
+    .breadcrumb-current {
+      color: var(--text-strong);
+      font-weight: 600;
+    }
 
-        .breadcrumb-sep {
-            color: var(--muted);
-        }
+    .breadcrumb-sep {
+      color: var(--muted);
+    }
 
-        .explorer-list {
-            grid-column: 1 / -1;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            min-height: 0;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow-y: auto;
-        }
+    .explorer-list {
+      grid-column: 1 / -1;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      min-height: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow-y: auto;
+    }
 
-        .explorer-empty {
-            padding: 16px;
-            color: var(--muted);
-            font-style: italic;
-        }
+    .explorer-empty {
+      padding: 16px;
+      color: var(--muted);
+      font-style: italic;
+    }
 
-        .loading {
-            padding: 6px 10px;
-            color: var(--loading-soft);
-            font-style: italic;
-            animation: var(--motion-loading-animation);
-            user-select: none;
-        }
+    .loading {
+      padding: 6px 10px;
+      color: var(--loading-soft);
+      font-style: italic;
+      animation: var(--motion-loading-animation);
+      user-select: none;
+    }
 
-        .explorer-view>.loading,
-        .explorer-view>.explorer-empty {
-            grid-column: 1 / -1;
-        }
+    .explorer-view>.loading,
+    .explorer-view>.explorer-empty {
+      grid-column: 1 / -1;
+    }
 
-        .explorer-item+.explorer-item {
-            border-top: 1px solid var(--border);
-        }
+    .explorer-item+.explorer-item {
+      border-top: 1px solid var(--border);
+    }
 
-        .explorer-row {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding: 10px 14px;
-            cursor: pointer;
-            transition: background 0.18s ease;
-        }
+    .explorer-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 0.18s ease;
+    }
 
-        .explorer-row:hover {
-            background: rgb(255, 255, 255, 5%);
-        }
+    .explorer-row:hover {
+      background: rgb(255 255 255 / 5%);
+    }
 
-        .material-item {
-            width: 100%;
-            box-sizing: border-box;
-        }
+    .material-item {
+      width: 100%;
+      box-sizing: border-box;
+    }
 
-        .material-row {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding: 8px 10px 8px 8px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: background 0.18s ease;
-        }
+    .material-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 8px 10px 8px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.18s ease;
+    }
 
-        .material-row:hover {
-            background: rgb(255, 255, 255, 5%);
-        }
+    .material-row:hover {
+      background: rgb(255 255 255 / 5%);
+    }
 
-        .children {
-            list-style: none;
-            padding-left: 32px;
-            margin: 0;
-            width: 100%;
-            position: relative;
-        }
+    .children {
+      list-style: none;
+      padding-left: 32px;
+      margin: 0;
+      width: 100%;
+      position: relative;
+    }
 
-        .material-row:hover~.children {
-            background: rgb(255, 255, 255, 2%);
-        }
+    .material-row:hover~.children {
+      background: rgb(255 255 255 / 2%);
+    }
 
-        .material-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 42px;
-            height: 42px;
-            font-size: 32px;
-            user-select: none;
-            color: var(--text-strong);
-        }
+    .material-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      font-size: 32px;
+      user-select: none;
+      color: var(--text-strong);
+    }
 
-        .folder-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            text-align: center;
-            font-size: 21px;
-            user-select: none;
-            transition: transform var(--motion-duration) var(--motion-easing);
-            color: var(--muted);
-        }
+    .folder-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      text-align: center;
+      font-size: 21px;
+      user-select: none;
+      transition: transform var(--motion-duration) var(--motion-easing);
+      color: var(--muted);
+    }
 
-        .folder-toggle.expanded {
-            transform: rotate(90deg);
-        }
+    .folder-toggle.expanded {
+      transform: rotate(90deg);
+    }
 
-        .materials-list {
-            list-style: none;
-            padding-left: 4px;
-            margin: 0;
-            width: 100%;
-        }
+    .materials-list {
+      list-style: none;
+      padding-left: 4px;
+      margin: 0;
+      width: 100%;
+    }
 
-        .tree-list {
-            flex: 1 1 auto;
-            min-height: 0;
-            padding: 6px 0;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--surface);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            overflow-y: auto;
-        }
+    .tree-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 6px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      overflow-y: auto;
+    }
 
-        .tree-list>.material-item+.material-item {
-            border-top: 1px solid var(--border);
-        }
+    .tree-list>.material-item+.material-item {
+      border-top: 1px solid var(--border);
+    }
 
-        .children::before {
-            content: "";
-            position: absolute;
-            left: 16px;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            background: var(--tree-line);
-        }
+    .children::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--tree-line);
+    }
 
-        .loading.error {
-            color: var(--danger);
-        }
+    .loading.error {
+      color: var(--danger);
+    }
 
-        .course-info {
-            flex: 0 0 auto;
-            margin-bottom: 10px;
-        }
+    .course-info {
+      flex: 0 0 auto;
+      margin-bottom: 10px;
+    }
 
-        .course-info .course-name {
-            margin: 0;
-            color: var(--text-strong);
-            font-size: clamp(1.4rem, 2.4vw, 1.9rem);
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
+    .course-info .course-name {
+      margin: 0;
+      color: var(--text-strong);
+      font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
 
-        .course-info .course-subject {
-            margin: 4px 0 0;
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
+    .course-info .course-subject {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
 
-        @keyframes pulse-color {
-            0% {
-                color: rgb(148, 163, 184, 60%);
-            }
+    @keyframes pulse-color {
+      0% {
+        color: rgb(148 163 184 / 60%);
+      }
 
-            50% {
-                color: rgb(203, 213, 225, 90%);
-            }
+      50% {
+        color: rgb(203 213 225 / 90%);
+      }
 
-            100% {
-                color: rgb(148, 163, 184, 60%);
-            }
-        }
-
-        .course-toolbar .back-btn {
-            margin-bottom: 0;
-            padding: 8px 14px;
-        }
-    </style>
+      100% {
+        color: rgb(148 163 184 / 60%);
+      }
+    }
+  </style>
 </head>
 
 <body class="app-page app-page--content">
-    <div class="course-toolbar">
-        <div class="course-toolbar-left">
-            <a href="/home" class="back-btn">← Back</a>
-            <div id="assignments-search"></div>
+  <div class="course-toolbar">
+    <div class="course-toolbar-left">
+      <a class="back-btn" data-back-button data-back-fallback="/home"></a>
+      <a href="/home" class="back-btn">Home</a>
+      <div id="assignments-search"></div>
+    </div>
+
+    <nav class="page-actions" aria-label="Page actions">
+      <a class="settings-link" data-settings-link href="/settings">Settings</a>
+    </nav>
+  </div>
+
+  <div class="main-layout">
+    <div id="assignments-sidebar"></div>
+
+    <main class="page">
+      <div class="course-info">
+        <h2 class="course-name" id="course-name">Loading course...</h2>
+        <p class="course-subject" id="course-subject" style="display: none"></p>
+      </div>
+
+      <div class="page-header">
+        <h2>Course Materials</h2>
+        <div class="page-header-controls">
+          <div class="sort-dropdown" id="sort-dropdown">
+            <button type="button" class="sort-select-btn" id="sort-select-btn" aria-haspopup="listbox"
+              aria-expanded="false">
+              <span id="sort-select-label">Sort: Default</span>
+              <span class="sort-caret" aria-hidden="true"></span>
+            </button>
+            <ul class="sort-select-menu" id="sort-select-menu" role="listbox" aria-label="Sort by"
+              style="display: none">
+              <li role="option" class="sort-select-option" data-value="default">
+                Default
+              </li>
+              <li role="option" class="sort-select-option" data-value="name-asc">
+                Name (A–Z)
+              </li>
+              <li role="option" class="sort-select-option" data-value="name-desc">
+                Name (Z–A)
+              </li>
+              <li role="option" class="sort-select-option" data-value="type">
+                Type
+              </li>
+            </ul>
+          </div>
+          <div class="view-toggle" role="group" aria-label="View mode">
+            <button type="button" id="tree-view-btn" class="view-btn active">
+              🌳 Tree
+            </button>
+            <button type="button" id="explorer-view-btn" class="view-btn">
+              🗂️ Explorer
+            </button>
+          </div>
         </div>
+      </div>
 
-        <nav class="page-actions" aria-label="Page actions">
-            <a class="settings-link" href="/settings">Settings</a>
-        </nav>
-    </div>
+      <ul id="root-folder" class="materials-list tree-list"></ul>
+      <div id="explorer-view" class="explorer-view" style="display: none"></div>
+    </main>
+  </div>
 
-    <div class="main-layout">
-        <div id="assignments-sidebar"></div>
+  <script src="/assignments-sidebar.js"></script>
+  <script src="/assignments-search.js"></script>
+  <script>
+    const pagePath = window.location.pathname
+    const pathSegments = pagePath.split("/").filter(Boolean)
 
-        <main class="page">
-            <div class="course-info">
-                <h2 class="course-name" id="course-name">Loading course...</h2>
-                <p class="course-subject" id="course-subject" style="display: none"></p>
-            </div>
+    const courseId = pathSegments[1]
 
-            <div class="page-header">
-                <h2>Course Materials</h2>
-                <div class="page-header-controls">
-                    <div class="sort-dropdown" id="sort-dropdown">
-                        <button type="button" class="sort-select-btn" id="sort-select-btn" aria-haspopup="listbox"
-                            aria-expanded="false">
-                            <span id="sort-select-label">Sort: Default</span>
-                            <span class="sort-caret" aria-hidden="true"></span>
-                        </button>
-                        <ul class="sort-select-menu" id="sort-select-menu" role="listbox" aria-label="Sort by"
-                            style="display: none">
-                            <li role="option" class="sort-select-option" data-value="default">
-                                Default
-                            </li>
-                            <li role="option" class="sort-select-option" data-value="name-asc">
-                                Name (A–Z)
-                            </li>
-                            <li role="option" class="sort-select-option" data-value="name-desc">
-                                Name (Z–A)
-                            </li>
-                            <li role="option" class="sort-select-option" data-value="type">
-                                Type
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="view-toggle" role="group" aria-label="View mode">
-                        <button type="button" id="tree-view-btn" class="view-btn active">
-                            🌳 Tree
-                        </button>
-                        <button type="button" id="explorer-view-btn" class="view-btn">
-                            🗂️ Explorer
-                        </button>
-                    </div>
-                </div>
-            </div>
+    window.initAssignmentsSearch({
+      mountId: "assignments-search",
+      sectionId: courseId,
+    })
 
-            <ul id="root-folder" class="materials-list tree-list"></ul>
-            <div id="explorer-view" class="explorer-view" style="display: none"></div>
-        </main>
-    </div>
+    const pageQuery = new URLSearchParams(window.location.search)
+    const requestedFolderId = pageQuery.get("folder")
+    const requestedViewMode = pageQuery.get("view")
 
-    <script src="/assignments-sidebar.js"></script>
-    <script src="/assignments-search.js"></script>
-    <script>
-        const pagePath = window.location.pathname
-        const pathSegments = pagePath.split("/").filter(Boolean)
+    const materialTypeIcons = {
+      folder: "📁",
+      assignment: "📝",
+      discussion: "💬",
+      page: "📰",
+      document: "📃",
+    }
 
-        const courseId = pathSegments[1]
+    const settingsKeys = window.SETTINGS_KEYS
+    const VIEW_MODE_KEY = settingsKeys.viewMode
+    const EXPANDED_FOLDERS_KEY = settingsKeys.expandedFolders
+    const REMEMBER_EXPANDED_FOLDERS_KEY = settingsKeys.rememberExpandedFolders
 
-        window.initAssignmentsSearch({
-            mountId: "assignments-search",
-            sectionId: courseId,
+    function getRememberExpandedFoldersEnabled() {
+      try {
+        return localStorage.getItem(REMEMBER_EXPANDED_FOLDERS_KEY) === "true"
+      }
+      catch (error) {
+        console.error(error)
+        return false
+      }
+    }
+
+    const rememberExpandedFoldersEnabled = getRememberExpandedFoldersEnabled()
+
+    function getSavedExpandedFolders() {
+      try {
+        const raw = localStorage.getItem(EXPANDED_FOLDERS_KEY)
+        const parsed = raw ? JSON.parse(raw) : []
+        return Array.isArray(parsed) ? parsed : []
+      }
+      catch (error) {
+        console.error(error)
+        return []
+      }
+    }
+
+    const expandedFolderIds = new Set(
+      rememberExpandedFoldersEnabled ? getSavedExpandedFolders() : [],
+    )
+
+    function saveExpandedFolders() {
+      if (!rememberExpandedFoldersEnabled) {
+        return
+      }
+
+      try {
+        localStorage.setItem(
+          EXPANDED_FOLDERS_KEY,
+          JSON.stringify([...expandedFolderIds]),
+        )
+      }
+      catch (error) {
+        console.error(error)
+      }
+    }
+
+    function addExpandedFolder(folderId) {
+      if (!rememberExpandedFoldersEnabled) {
+        return
+      }
+
+      expandedFolderIds.add(folderId)
+      saveExpandedFolders()
+    }
+
+    function removeExpandedFolder(folderId) {
+      if (!rememberExpandedFoldersEnabled) {
+        return
+      }
+
+      expandedFolderIds.delete(folderId)
+      saveExpandedFolders()
+    }
+    const FOLDER_COLOR_MODE_KEY = settingsKeys.folderColorMode
+
+    function normalizeFolderColorMode(raw) {
+      if (raw === "none" || raw === "Schoology" || raw === "random") {
+        return raw
+      }
+      if (raw === "true") {
+        return "random"
+      }
+      if (raw === "false") {
+        return "none"
+      }
+      return null
+    }
+
+    function getFolderColorMode() {
+      try {
+        return (
+          normalizeFolderColorMode(
+            localStorage.getItem(FOLDER_COLOR_MODE_KEY),
+          ) ?? "random"
+        )
+      }
+      catch (error) {
+        console.error(error)
+        return "random"
+      }
+    }
+
+    const folderColorMode = getFolderColorMode()
+
+    const folderPalette = [
+      "#f5b942",
+      "#4f9fef",
+      "#8b7ff5",
+      "#5fbf7c",
+      "#f2716d",
+      "#4dd0c4",
+      "#e0a8f0",
+      "#f28b50",
+    ]
+
+    function colorForFolder(id) {
+      let hash = 0
+      for (const char of String(id)) {
+        hash = hash * 31 + char.charCodeAt(0) >>> 0
+      }
+      return folderPalette[hash % folderPalette.length]
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value))
+    }
+
+    function hashHue(str) {
+      let hash = 0
+      for (const char of String(str)) {
+        hash = hash * 31 + char.charCodeAt(0) >>> 0
+      }
+      return hash % 360
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255
+      g /= 255
+      b /= 255
+      const max = Math.max(r, g, b),
+        min = Math.min(r, g, b)
+      const l = (max + min) / 2
+      let h = 0,
+        s = 0
+
+      if (max !== min) {
+        const d = max - min
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+        switch (max) {
+          case r:
+            h = (g - b) / d + (g < b ? 6 : 0)
+            break
+          case g:
+            h = (b - r) / d + 2
+            break
+          case b:
+            h = (r - g) / d + 4
+            break
+        }
+        h *= 60
+      }
+
+      return { h, s: s * 100, l: l * 100 }
+    }
+
+    let colorParseEl = null
+    function parseCSSColorToRGB(colorStr) {
+      if (!colorParseEl) {
+        colorParseEl = document.createElement("div")
+        colorParseEl.style.display = "none"
+        document.body.appendChild(colorParseEl)
+      }
+
+      colorParseEl.style.color = ""
+      colorParseEl.style.color = colorStr
+      if (!colorParseEl.style.color) {
+        return null
+      }
+
+      const match = getComputedStyle(colorParseEl).color.match(/[\d.]+/g)
+      if (!match || match.length < 3) {
+        return null
+      }
+
+      const [r, g, b] = match.map(Number)
+      return { r, g, b }
+    }
+
+    function normalizeAccentColor(colorStr) {
+      console.log(colorStr)
+      const rgb = parseCSSColorToRGB(colorStr)
+      if (!rgb) {
+        return null
+      }
+
+      let { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b)
+
+      if (l < 12) {
+        return "hsl(0, 0%, 30%)"
+      }
+
+      if (s < 12 || l > 95) {
+        h = hashHue(colorStr)
+        s = 75
+      }
+
+      s = clamp(s, 55, 85)
+      l = clamp(l, 55, 72)
+
+      console.log(
+        `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`,
+      )
+      return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`
+    }
+
+    function getFolderOutlineColor(colorStr) {
+      const rgb = parseCSSColorToRGB(colorStr)
+      if (!rgb) {
+        return "rgba(0, 0, 0, 0.35)"
+      }
+
+      const { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b)
+      const isDark = l < 50
+      const newL = clamp(isDark ? l + 28 : l - 28, 4, 96)
+      const outlineSat = clamp(s, 20, 85)
+
+      return `hsl(${Math.round(h)}, ${Math.round(outlineSat)}%, ${Math.round(newL)}%)`
+    }
+
+    function folderIconSVG(color) {
+      const outlineColor = getFolderOutlineColor(color)
+      return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="34" height="34">
+                        <path fill="${color}" stroke="${outlineColor}" stroke-width="1.25" stroke-linejoin="round" d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                </svg>`
+    }
+
+    function setMaterialIcon(iconEl, material) {
+      if (material.type !== "folder") {
+        iconEl.textContent = materialTypeIcons[material.type]
+        return
+      }
+
+      switch (folderColorMode) {
+        case "none":
+          iconEl.innerHTML = folderIconSVG("#FFCA28")
+          break
+        case "Schoology":
+          const color = material.folderColor && normalizeAccentColor(material.folderColor) || colorForFolder(material.id)
+          iconEl.innerHTML = folderIconSVG(color)
+          break
+        case "random":
+        default: {
+          const color = colorForFolder(material.id)
+          iconEl.innerHTML = folderIconSVG(color)
+          break
+        }
+      }
+    }
+
+    function getSavedViewMode() {
+      if (requestedViewMode === "tree" || requestedViewMode === "explorer") {
+        return requestedViewMode
+      }
+
+      try {
+        const saved = localStorage.getItem(VIEW_MODE_KEY)
+        return saved === "tree" ? "tree" : "explorer"
+      }
+      catch (error) {
+        console.error(error)
+        return "tree"
+      }
+    }
+
+    function saveViewMode(mode) {
+      try {
+        localStorage.setItem(VIEW_MODE_KEY, mode)
+      }
+      catch (error) {
+        console.error(error)
+      }
+    }
+
+    const SORT_MODE_KEY = settingsKeys.sortMode
+    const VALID_SORT_MODES = ["default", "name-asc", "name-desc", "type"]
+
+    function getSavedSortMode() {
+      try {
+        const saved = localStorage.getItem(SORT_MODE_KEY)
+        return VALID_SORT_MODES.includes(saved) ? saved : "default"
+      }
+      catch (error) {
+        console.error(error)
+        return "default"
+      }
+    }
+
+    function saveSortMode(mode) {
+      try {
+        localStorage.setItem(SORT_MODE_KEY, mode)
+      }
+      catch (error) {
+        console.error(error)
+      }
+    }
+
+    function sortMaterials(materials, mode) {
+      const sortedMaterials = materials.slice()
+
+      switch (mode) {
+        case "name-asc":
+          sortedMaterials.sort((a, b) => a.title.localeCompare(b.title))
+          break
+        case "name-desc":
+          sortedMaterials.sort((a, b) => b.title.localeCompare(a.title))
+          break
+        case "type":
+          const sortOrder = [
+            "folder",
+            "assignment",
+            "discussion",
+            "page",
+            "document",
+          ]
+          sortedMaterials.sort((material1, material2) => {
+            const aIndex = sortOrder.indexOf(material1.type)
+            const bIndex = sortOrder.indexOf(material2.type)
+
+            const aOrder = aIndex === -1 ? Infinity : aIndex
+            const bOrder = bIndex === -1 ? Infinity : bIndex
+
+            return (
+              aOrder - bOrder || material1.title.localeCompare(material2.title)
+            )
+          })
+          break
+        default:
+          break
+      }
+
+      return sortedMaterials
+    }
+
+    function updateCourseUrl(folderId, mode = viewMode) {
+      const url = new URL(window.location.href)
+      url.searchParams.set("view", mode)
+
+      if (folderId && folderId !== "root") {
+        url.searchParams.set("folder", folderId)
+      }
+      else {
+        url.searchParams.delete("folder")
+      }
+
+      window.history.replaceState({}, "", url.pathname + url.search)
+    }
+
+    let viewMode = getSavedViewMode()
+    let sortMode = getSavedSortMode()
+    let rootMaterials = null
+    const folderCache = new Map()
+    let explorerPath = [{ id: "root", title: "Course Materials" }]
+
+    let explorerHistory = [explorerPath.slice()]
+    let explorerHistoryIndex = 0
+
+    let treeCurrentPath = [{ id: "root", title: "Course Materials" }]
+
+    const folderParentMap = new Map()
+    const folderTitleMap = new Map()
+
+    function buildPathFromFolderId(folderId) {
+      if (!folderId || folderId === "root") {
+        return [{ id: "root", title: "Course Materials" }]
+      }
+
+      const chain = []
+      let currentId = folderId
+
+      while (currentId && currentId !== "root") {
+        chain.unshift({
+          id: currentId,
+          title: folderTitleMap.get(currentId) ?? currentId,
         })
+        currentId = folderParentMap.get(currentId)
+      }
 
-        const pageQuery = new URLSearchParams(window.location.search)
-        const requestedFolderId = pageQuery.get("folder")
-        const requestedViewMode = pageQuery.get("view")
+      return [{ id: "root", title: "Course Materials" }, ...chain]
+    }
 
-        const materialTypeIcons = {
-            folder: "📁",
-            assignment: "📝",
-            discussion: "💬",
-            page: "📰",
-            document: "📃",
-        }
+    const course = fetchRetry(`/api/section/${courseId}`)
+    const parentStructure = requestedFolderId && requestedFolderId !== "root" ? fetchRetry(
+      `/api/parent_structure?section_id=${encodeURIComponent(courseId)}&folder_id=${encodeURIComponent(requestedFolderId)}`,
+    ) : Promise.resolve({ structure: [] })
+    const sidebar = window.initAssignmentsSidebar({
+      mountId: "assignments-sidebar",
+      sectionId: courseId,
+      waitFor: course,
+    })
 
-        const settingsKeys = window.SETTINGS_KEYS
-        const VIEW_MODE_KEY = settingsKeys.viewMode
-        const EXPANDED_FOLDERS_KEY = settingsKeys.expandedFolders
-        const REMEMBER_EXPANDED_FOLDERS_KEY = settingsKeys.rememberExpandedFolders
+    function getCourseElements(materials, parentId) {
+      const originalOrder = new Map(
+        materials.map((material, index) => [material, index]),
+      )
+      const sortedMaterials = sortMaterials(materials, sortMode)
 
-        function getRememberExpandedFoldersEnabled() {
-            try {
-                return localStorage.getItem(REMEMBER_EXPANDED_FOLDERS_KEY) === "true"
-            }
-            catch (error) {
-                console.error(error)
-                return false
-            }
-        }
+      const materialsList = document.createElement("ul")
+      materialsList.classList.add("materials-list")
 
-        const rememberExpandedFoldersEnabled = getRememberExpandedFoldersEnabled()
+      const materialTemplate = document.getElementById("material-template")
 
-        function getSavedExpandedFolders() {
-            try {
-                const raw = localStorage.getItem(EXPANDED_FOLDERS_KEY)
-                const parsed = raw ? JSON.parse(raw) : []
-                return Array.isArray(parsed) ? parsed : []
-            }
-            catch (error) {
-                console.error(error)
-                return []
-            }
-        }
+      for (let index = 0; index < sortedMaterials.length; index++) {
+        const material = sortedMaterials[index]
+        const materialClone = materialTemplate.content.cloneNode(true)
 
-        const expandedFolderIds = new Set(
-            rememberExpandedFoldersEnabled ? getSavedExpandedFolders() : [],
+        const materialRow = materialClone.querySelector(".material-row")
+        const materialIcon = materialClone.querySelector(".material-icon")
+        const materialTitle = materialClone.querySelector(".material-title")
+        const folderToggle = materialClone.querySelector(".folder-toggle")
+        const childrenContainer = materialClone.querySelector(".children")
+
+        setMaterialIcon(materialIcon, material)
+        materialTitle.textContent = material.title
+
+        materialRow.dataset.title = material.title
+        materialRow.dataset.type = material.type
+        materialRow.dataset.originalIndex = String(
+          originalOrder.get(material) ?? index,
         )
 
-        function saveExpandedFolders() {
-            if (!rememberExpandedFoldersEnabled) {
-                return
-            }
-
-            try {
-                localStorage.setItem(
-                    EXPANDED_FOLDERS_KEY,
-                    JSON.stringify([...expandedFolderIds]),
-                )
-            }
-            catch (error) {
-                console.error(error)
-            }
-        }
-
-        function addExpandedFolder(folderId) {
-            if (!rememberExpandedFoldersEnabled) {
-                return
-            }
-
-            expandedFolderIds.add(folderId)
-            saveExpandedFolders()
-        }
-
-        function removeExpandedFolder(folderId) {
-            if (!rememberExpandedFoldersEnabled) {
-                return
-            }
-
-            expandedFolderIds.delete(folderId)
-            saveExpandedFolders()
-        }
-        const FOLDER_COLOR_MODE_KEY = settingsKeys.folderColorMode
-
-        function normalizeFolderColorMode(raw) {
-            if (raw === "none" || raw === "Schoology" || raw === "random") {
-                return raw
-            }
-            if (raw === "true") {
-                return "random"
-            }
-            if (raw === "false") {
-                return "none"
-            }
-            return null
-        }
-
-        function getFolderColorMode() {
-            try {
-                return (
-                    normalizeFolderColorMode(
-                        localStorage.getItem(FOLDER_COLOR_MODE_KEY),
-                    ) ?? "random"
-                )
-            }
-            catch (error) {
-                console.error(error)
-                return "random"
-            }
-        }
-
-        const folderColorMode = getFolderColorMode()
-
-        const folderPalette = [
-            "#f5b942",
-            "#4f9fef",
-            "#8b7ff5",
-            "#5fbf7c",
-            "#f2716d",
-            "#4dd0c4",
-            "#e0a8f0",
-            "#f28b50",
-        ]
-
-        function colorForFolder(id) {
-            let hash = 0
-            for (const char of String(id)) {
-                hash = hash * 31 + char.charCodeAt(0) >>> 0
-            }
-            return folderPalette[hash % folderPalette.length]
-        }
-
-        function clamp(value, min, max) {
-            return Math.min(max, Math.max(min, value))
-        }
-
-        function hashHue(str) {
-            let hash = 0
-            for (const char of String(str)) {
-                hash = hash * 31 + char.charCodeAt(0) >>> 0
-            }
-            return hash % 360
-        }
-
-        function rgbToHsl(r, g, b) {
-            r /= 255
-            g /= 255
-            b /= 255
-            const max = Math.max(r, g, b),
-                min = Math.min(r, g, b)
-            const l = (max + min) / 2
-            let h = 0,
-                s = 0
-
-            if (max !== min) {
-                const d = max - min
-                s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-                switch (max) {
-                    case r:
-                        h = (g - b) / d + (g < b ? 6 : 0)
-                        break
-                    case g:
-                        h = (b - r) / d + 2
-                        break
-                    case b:
-                        h = (r - g) / d + 4
-                        break
-                }
-                h *= 60
-            }
-
-            return { h, s: s * 100, l: l * 100 }
-        }
-
-        let colorParseEl = null
-        function parseCSSColorToRGB(colorStr) {
-            if (!colorParseEl) {
-                colorParseEl = document.createElement("div")
-                colorParseEl.style.display = "none"
-                document.body.appendChild(colorParseEl)
-            }
-
-            colorParseEl.style.color = ""
-            colorParseEl.style.color = colorStr
-            if (!colorParseEl.style.color) {
-                return null
-            }
-
-            const match = getComputedStyle(colorParseEl).color.match(/[\d.]+/g)
-            if (!match || match.length < 3) {
-                return null
-            }
-
-            const [r, g, b] = match.map(Number)
-            return { r, g, b }
-        }
-
-        function normalizeAccentColor(colorStr) {
-            console.log(colorStr)
-            const rgb = parseCSSColorToRGB(colorStr)
-            if (!rgb) {
-                return null
-            }
-
-            let { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b)
-
-            if (l < 12) {
-                return `hsl(0, 0%, 30%)`
-            }
-
-            if (s < 12 || l > 95) {
-                h = hashHue(colorStr)
-                s = 75
-            }
-
-            s = clamp(s, 55, 85)
-            l = clamp(l, 55, 72)
-
-            console.log(`hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`)
-            return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`
-        }
-
-        function getFolderOutlineColor(colorStr) {
-            const rgb = parseCSSColorToRGB(colorStr)
-            if (!rgb) {
-                return "rgba(0, 0, 0, 0.35)"
-            }
-
-            const { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b)
-            const isDark = l < 50
-            const newL = clamp(isDark ? l + 28 : l - 28, 4, 96)
-            const outlineSat = clamp(s, 20, 85)
-
-            return `hsl(${Math.round(h)}, ${Math.round(outlineSat)}%, ${Math.round(newL)}%)`
-        }
-
-        function folderIconSVG(color) {
-            const outlineColor = getFolderOutlineColor(color)
-            return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="34" height="34">
-                        <path fill="${color}" stroke="${outlineColor}" stroke-width="1.25" stroke-linejoin="round" d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
-                    </svg>`
-        }
-
-        function setMaterialIcon(iconEl, material) {
-            if (material.type !== "folder") {
-                iconEl.textContent = materialTypeIcons[material.type]
-                return
-            }
-
-            switch (folderColorMode) {
-                case "none":
-                    iconEl.innerHTML = folderIconSVG("#FFCA28")
-                    break
-                case "Schoology":
-                    const color = material.folderColor && normalizeAccentColor(material.folderColor) || colorForFolder(material.id)
-                    iconEl.innerHTML = folderIconSVG(color)
-                    break
-                case "random":
-                default: {
-                    const color = colorForFolder(material.id)
-                    iconEl.innerHTML = folderIconSVG(color)
-                    break
-                }
-            }
-        }
-
-        function getSavedViewMode() {
-            if (requestedViewMode === "tree" || requestedViewMode === "explorer") {
-                return requestedViewMode
-            }
-
-            try {
-                const saved = localStorage.getItem(VIEW_MODE_KEY)
-                return saved === "tree" ? "tree" : "explorer"
-            }
-            catch (error) {
-                console.error(error)
-                return "tree"
-            }
-        }
-
-        function saveViewMode(mode) {
-            try {
-                localStorage.setItem(VIEW_MODE_KEY, mode)
-            }
-            catch (error) {
-                console.error(error)
-            }
-        }
-
-        const SORT_MODE_KEY = settingsKeys.sortMode
-        const VALID_SORT_MODES = ["default", "name-asc", "name-desc", "type"]
-
-        function getSavedSortMode() {
-            try {
-                const saved = localStorage.getItem(SORT_MODE_KEY)
-                return VALID_SORT_MODES.includes(saved) ? saved : "default"
-            }
-            catch (error) {
-                console.error(error)
-                return "default"
-            }
-        }
-
-        function saveSortMode(mode) {
-            try {
-                localStorage.setItem(SORT_MODE_KEY, mode)
-            }
-            catch (error) {
-                console.error(error)
-            }
-        }
-
-        function sortMaterials(materials, mode) {
-            const sortedMaterials = materials.slice()
-
-            switch (mode) {
-                case "name-asc":
-                    sortedMaterials.sort((a, b) => a.title.localeCompare(b.title))
-                    break
-                case "name-desc":
-                    sortedMaterials.sort((a, b) => b.title.localeCompare(a.title))
-                    break
-                case "type":
-                    const sortOrder = [
-                        "folder",
-                        "assignment",
-                        "discussion",
-                        "page",
-                        "document",
-                    ]
-                    sortedMaterials.sort((material1, material2) => {
-                        const aIndex = sortOrder.indexOf(material1.type);
-                        const bIndex = sortOrder.indexOf(material2.type);
-
-                        const aOrder = aIndex === -1 ? Infinity : aIndex;
-                        const bOrder = bIndex === -1 ? Infinity : bIndex;
-
-                        return aOrder - bOrder || material1.title.localeCompare(material2.title);
-                    });
-                    break
-                default:
-                    break
-            }
-
-            return sortedMaterials
-        }
-
-        function updateCourseUrl(folderId, mode = viewMode) {
-            const url = new URL(window.location.href)
-            url.searchParams.set("view", mode)
-
-            if (folderId && folderId !== "root") {
-                url.searchParams.set("folder", folderId)
-            }
-            else {
-                url.searchParams.delete("folder")
-            }
-
-            window.history.replaceState({}, "", url.pathname + url.search)
-        }
-
-        let viewMode = getSavedViewMode()
-        let sortMode = getSavedSortMode()
-        let rootMaterials = null
-        const folderCache = new Map()
-        let explorerPath = [{ id: "root", title: "Course Materials" }]
-
-        let explorerHistory = [explorerPath.slice()]
-        let explorerHistoryIndex = 0
-
-        let treeCurrentPath = [{ id: "root", title: "Course Materials" }]
-
-        const folderParentMap = new Map()
-        const folderTitleMap = new Map()
-
-        function buildPathFromFolderId(folderId) {
-            if (!folderId || folderId === "root") {
-                return [{ id: "root", title: "Course Materials" }]
-            }
-
-            const chain = []
-            let currentId = folderId
-
-            while (currentId && currentId !== "root") {
-                chain.unshift({
-                    id: currentId,
-                    title: folderTitleMap.get(currentId) ?? currentId,
-                })
-                currentId = folderParentMap.get(currentId)
-            }
-
-            return [{ id: "root", title: "Course Materials" }, ...chain]
-        }
-
-        const course = fetchRetry(`/api/section/${courseId}`)
-        const parentStructure = requestedFolderId && requestedFolderId !== "root" ? fetchRetry(
-            `/api/parent_structure?section_id=${encodeURIComponent(courseId)}&folder_id=${encodeURIComponent(requestedFolderId)}`,
-        ) : Promise.resolve({ structure: [] })
-        const sidebar = window.initAssignmentsSidebar({
-            mountId: "assignments-sidebar",
-            sectionId: courseId,
-            waitFor: course,
-        })
-
-        function getCourseElements(materials, parentId) {
-            const originalOrder = new Map(
-                materials.map((material, index) => [material, index]),
-            )
-            const sortedMaterials = sortMaterials(materials, sortMode)
-
-            const materialsList = document.createElement("ul")
-            materialsList.classList.add("materials-list")
-
-            const materialTemplate = document.getElementById("material-template")
-
-            for (let index = 0; index < sortedMaterials.length; index++) {
-                const material = sortedMaterials[index]
-                const materialClone = materialTemplate.content.cloneNode(true)
-
-                const materialRow = materialClone.querySelector(".material-row")
-                const materialIcon = materialClone.querySelector(".material-icon")
-                const materialTitle = materialClone.querySelector(".material-title")
-                const folderToggle = materialClone.querySelector(".folder-toggle")
-                const childrenContainer = materialClone.querySelector(".children")
-
-                setMaterialIcon(materialIcon, material)
-                materialTitle.textContent = material.title
-
-                materialRow.dataset.title = material.title
-                materialRow.dataset.type = material.type
-                materialRow.dataset.originalIndex = String(
-                    originalOrder.get(material) ?? index,
-                )
-
-                if (material.type === "folder") {
-                    materialRow.dataset.folderId = material.id
-                    materialRow.href = `/section/${courseId}?view=tree&folder=${encodeURIComponent(material.id)}`
-                    folderParentMap.set(material.id, parentId)
-                    folderTitleMap.set(material.id, material.title)
-
-                    let isExpanded = false
-                    let isLoading = false
-
-                    materialRow.addEventListener("click", async (event) => {
-                        event.stopPropagation()
-                        event.preventDefault()
-                        isExpanded = !isExpanded
-                        materialRow.dataset.expanded = String(isExpanded)
-
-                        folderToggle.setAttribute("aria-expanded", String(isExpanded))
-                        folderToggle.classList.toggle("expanded", isExpanded)
-
-                        if (isExpanded) {
-                            treeCurrentPath = buildPathFromFolderId(material.id)
-                            childrenContainer.style.display = "block"
-                            addExpandedFolder(material.id)
-
-                            if (!isLoading) {
-                                const loadingTextElement = document.createElement("li")
-                                loadingTextElement.classList.add("loading")
-                                loadingTextElement.textContent = "Loading contents..."
-                                childrenContainer.appendChild(loadingTextElement)
-
-                                isLoading = true
-                                const folderData = await fetchRetry(
-                                    `/api/section/${courseId}/folder/${material.id}`,
-                                )
-                                folderCache.set(material.id, folderData.materials)
-
-                                loadingTextElement.remove()
-
-                                if (!folderData.materials.length) {
-                                    const emptyFolderText = document.createElement("li")
-                                    emptyFolderText.textContent = "Empty folder"
-                                    childrenContainer.appendChild(emptyFolderText)
-                                }
-                                else {
-                                    const folderElements = getCourseElements(
-                                        folderData.materials,
-                                        material.id,
-                                    )
-                                    childrenContainer.appendChild(folderElements)
-                                }
-                            }
-                        }
-                        else {
-                            childrenContainer.style.display = "none"
-                            removeExpandedFolder(material.id)
-                        }
-                    })
-                }
-                else {
-                    materialRow.href = `/section/${courseId}/folder/${parentId}/material/${material.id}`
-                    folderToggle.textContent = ""
-                }
-
-                materialsList.appendChild(materialClone)
-            }
-
-            return materialsList
-        }
-
-        function compareTreeRows(itemA, itemB) {
-            const rowA = itemA.querySelector(":scope > .material-row")
-            const rowB = itemB.querySelector(":scope > .material-row")
-            const titleA = rowA?.dataset.title ?? ""
-            const titleB = rowB?.dataset.title ?? ""
-
-            switch (sortMode) {
-                case "name-asc":
-                    return titleA.localeCompare(titleB)
-                case "name-desc":
-                    return titleB.localeCompare(titleA)
-                case "type":
-                    return (
-                        (rowA?.dataset.type ?? "").localeCompare(
-                            rowB?.dataset.type ?? "",
-                        ) || titleA.localeCompare(titleB)
-                    )
-                default:
-                    return (
-                        Number(rowA?.dataset.originalIndex ?? 0) - Number(rowB?.dataset.originalIndex ?? 0)
-                    )
-            }
-        }
-
-        function resortMaterialsList(listEl) {
-            if (!listEl) {
-                return
-            }
-
-            const items = Array.from(listEl.children).filter((child) =>
-                child.classList.contains("material-item"),
-            )
-            items.sort(compareTreeRows)
-            items.forEach((item) => listEl.appendChild(item))
-
-            items.forEach((item) => {
-                const childrenContainer = item.querySelector(":scope > .children")
-                const childList = childrenContainer?.querySelector(
-                    ":scope > .materials-list",
-                )
-                resortMaterialsList(childList)
-            })
-        }
-
-        function resortTree() {
-            const rootFolderContainer = document.getElementById("root-folder")
-            resortMaterialsList(
-                rootFolderContainer.querySelector(":scope > .materials-list"),
-            )
-        }
-
-        async function syncTreeToPath(path) {
-            if (!rootMaterials) {
-                return
-            }
-
-            const rootFolderContainer = document.getElementById("root-folder")
-            let folderContainer = rootFolderContainer
-
-            for (const crumb of path) {
-                if (crumb.id === "root") {
-                    continue
-                }
-
-                const folderRow = folderContainer.querySelector(
-                    `[data-folder-id="${crumb.id}"]`,
-                )
-                if (!folderRow) {
-                    break
-                }
-
-                folderContainer = await expandFolderRow(folderRow)
-            }
-
-            treeCurrentPath = path.slice()
-
-            const targetId = path[path.length - 1]?.id
-            if (targetId && targetId !== "root") {
-                //rootFolderContainer.querySelector(`[data-folder-id="${targetId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" })
-            }
-        }
-
-        async function restoreExpandedFolders(folderIds) {
-            for (const folderId of folderIds) {
-                try {
-                    const structureResponse = await fetchRetry(
-                        `/api/parent_structure?section_id=${encodeURIComponent(courseId)}&folder_id=${encodeURIComponent(folderId)}`,
-                    )
-
-                    const path = [{ id: "root", title: "Course Materials" }]
-                    for (const folder of structureResponse.structure) {
-                        path.push({
-                            id: getStructureFolderId(folder),
-                            title: folder.title,
-                        })
-                    }
-
-                    await syncTreeToPath(path)
-                }
-                catch (error) {
-                    console.error(error)
-                }
-            }
-        }
-
-        async function getFolderMaterials(
-            folderId,
-            { forceRefresh = false } = {},
-        ) {
-            if (folderId === "root") {
-                if (forceRefresh) {
-                    const courseData = await fetchRetry(`/api/section/${courseId}`)
-                    rootMaterials = courseData.materials
-                }
-                return rootMaterials
-            }
-
-            if (!forceRefresh && folderCache.has(folderId)) {
-                return folderCache.get(folderId)
-            }
-
-            const folderData = await fetchRetry(
-                `/api/section/${courseId}/folder/${folderId}`,
-            )
-            folderCache.set(folderId, folderData.materials)
-            return folderData.materials
-        }
-
-        async function expandFolderRow(folderRow) {
-            if (folderRow.dataset.expanded !== "true") {
-                folderRow.click()
-                while (folderRow.nextElementSibling.querySelector(".loading")) {
-                    await new Promise((resolve) => setTimeout(resolve, 0))
-                }
-            }
-
-            return folderRow.nextElementSibling
-        }
-
-        function getStructureFolderId(folder) {
-            const folderId = folder.id || folder.folderId || folder["@id"]
-            return String(folderId).split("/").pop()
-        }
-
-        function navigateExplorerTo(newPath, options = {}) {
-            const { pushHistory = true } = options
-
-            explorerPath = newPath
-
-            if (pushHistory) {
-                explorerHistory = explorerHistory.slice(0, explorerHistoryIndex + 1)
-                explorerHistory.push(newPath.slice())
-                explorerHistoryIndex = explorerHistory.length - 1
-            }
-
-            updateCourseUrl(explorerPath[explorerPath.length - 1].id, "explorer")
-            renderExplorer()
-        }
-
-        function resetExplorerHistory(path) {
-            explorerPath = path
-            explorerHistory = [path.slice()]
-            explorerHistoryIndex = 0
-        }
-
-        function explorerGoBack() {
-            if (explorerHistoryIndex <= 0) {
-                return
-            }
-
-            explorerHistoryIndex -= 1
-            explorerPath = explorerHistory[explorerHistoryIndex].slice()
-            updateCourseUrl(explorerPath[explorerPath.length - 1].id, "explorer")
-            renderExplorer()
-        }
-
-        function explorerGoForward() {
-            if (explorerHistoryIndex >= explorerHistory.length - 1) {
-                return
-            }
-
-            explorerHistoryIndex += 1
-            explorerPath = explorerHistory[explorerHistoryIndex].slice()
-            updateCourseUrl(explorerPath[explorerPath.length - 1].id, "explorer")
-            renderExplorer()
-        }
-
-        function explorerGoUp() {
-            if (explorerPath.length <= 1) {
-                return
-            }
-
-            navigateExplorerTo(explorerPath.slice(0, -1))
-        }
-
-        async function explorerRefresh() {
-            const currentFolder = explorerPath[explorerPath.length - 1]
-            await getFolderMaterials(currentFolder.id, { forceRefresh: true })
-            renderExplorer()
-        }
-
-        function buildExplorerToolbar() {
-            const toolbar = document.createElement("div")
-            toolbar.classList.add("explorer-toolbar")
-
-            const backBtn = document.createElement("button")
-            backBtn.type = "button"
-            backBtn.classList.add("toolbar-btn")
-            backBtn.title = "Back"
-            backBtn.setAttribute("aria-label", "Back")
-            backBtn.textContent = "←"
-            backBtn.disabled = explorerHistoryIndex <= 0
-            backBtn.addEventListener("click", explorerGoBack)
-
-            const forwardBtn = document.createElement("button")
-            forwardBtn.type = "button"
-            forwardBtn.classList.add("toolbar-btn")
-            forwardBtn.title = "Forward"
-            forwardBtn.setAttribute("aria-label", "Forward")
-            forwardBtn.textContent = "→"
-            forwardBtn.disabled = explorerHistoryIndex >= explorerHistory.length - 1
-            forwardBtn.addEventListener("click", explorerGoForward)
-
-            const upBtn = document.createElement("button")
-            upBtn.type = "button"
-            upBtn.classList.add("toolbar-btn")
-            upBtn.title = "Up one level"
-            upBtn.setAttribute("aria-label", "Up one level")
-            upBtn.textContent = "↑"
-            upBtn.disabled = explorerPath.length <= 1
-            upBtn.addEventListener("click", explorerGoUp)
-
-            const refreshBtn = document.createElement("button")
-            refreshBtn.type = "button"
-            refreshBtn.classList.add("toolbar-btn")
-            refreshBtn.title = "Refresh"
-            refreshBtn.setAttribute("aria-label", "Refresh")
-            refreshBtn.textContent = "⟳"
-            refreshBtn.addEventListener("click", () => {
-                refreshBtn.disabled = true
-                explorerRefresh().finally(() => {
-                    refreshBtn.disabled = false
-                })
-            })
-
-            toolbar.appendChild(backBtn)
-            toolbar.appendChild(forwardBtn)
-            toolbar.appendChild(upBtn)
-            toolbar.appendChild(refreshBtn)
-
-            return toolbar
-        }
-
-        async function renderExplorer() {
-            const container = document.getElementById("explorer-view")
-            container.innerHTML = ""
-
-            container.appendChild(buildExplorerToolbar())
-
-            const breadcrumb = document.createElement("div")
-            breadcrumb.classList.add("breadcrumb")
-
-            explorerPath.forEach((crumb, i) => {
-                const isLast = i === explorerPath.length - 1
-                const crumbEl = document.createElement("span")
-                crumbEl.classList.add("breadcrumb-item")
-                crumbEl.textContent = crumb.title
-
-                if (!isLast) {
-                    crumbEl.classList.add("breadcrumb-link")
-                    crumbEl.addEventListener("click", () => {
-                        navigateExplorerTo(explorerPath.slice(0, i + 1))
-                    })
-                    breadcrumb.appendChild(crumbEl)
-
-                    const sep = document.createElement("span")
-                    sep.classList.add("breadcrumb-sep")
-                    sep.textContent = "›"
-                    breadcrumb.appendChild(sep)
-                }
-                else {
-                    crumbEl.classList.add("breadcrumb-current")
-                    breadcrumb.appendChild(crumbEl)
-                }
-            })
-
-            container.appendChild(breadcrumb)
-
-            const currentFolder = explorerPath[explorerPath.length - 1]
-
-            const loadingEl = document.createElement("div")
-            loadingEl.classList.add("loading")
-            loadingEl.textContent = "Loading contents..."
-            container.appendChild(loadingEl)
-
-            const materials = sortMaterials(
-                await getFolderMaterials(currentFolder.id),
-                sortMode,
-            )
-            loadingEl.remove()
-
-            if (!materials.length) {
-                const emptyEl = document.createElement("div")
-                emptyEl.classList.add("explorer-empty")
-                emptyEl.textContent = "Empty folder"
-                container.appendChild(emptyEl)
-                return
-            }
-
-            const list = document.createElement("ul")
-            list.classList.add("explorer-list")
-
-            materials.forEach((material) => {
-                const item = document.createElement("li")
-                item.classList.add("explorer-item")
-
-                const row = document.createElement("a")
-                row.classList.add("explorer-row")
-
-                const icon = document.createElement("div")
-                icon.classList.add("material-icon")
-                setMaterialIcon(icon, material)
-
-                const title = document.createElement("div")
-                title.classList.add("material-title")
-                title.textContent = material.title
-
-                row.appendChild(icon)
-                row.appendChild(title)
-
-                if (material.type === "folder") {
-                    row.addEventListener("click", (event) => {
-                        event.preventDefault()
-                        navigateExplorerTo([
-                            ...explorerPath,
-                            { id: material.id, title: material.title },
-                        ])
-                    })
-                }
-                else {
-                    row.href = `/section/${courseId}/folder/${currentFolder.id}/material/${material.id}`
-                }
-
-                item.appendChild(row)
-                list.appendChild(item)
-            })
-
-            container.appendChild(list)
-        }
-
-        function setViewMode(mode, options = {}) {
-            const { persist = true, skipRender = false } = options
-
-            viewMode = mode
-
-            if (persist) {
-                saveViewMode(mode)
-                const currentPath = mode === "explorer" ? explorerPath : treeCurrentPath
-                updateCourseUrl(currentPath[currentPath.length - 1].id, mode)
-            }
-
-            document
-                .getElementById("tree-view-btn")
-                .classList.toggle("active", mode === "tree")
-            document
-                .getElementById("explorer-view-btn")
-                .classList.toggle("active", mode === "explorer")
-
-            document
-                .querySelector(".page")
-                .classList.toggle("explorer-mode", mode === "explorer")
-
-            document.getElementById("root-folder").style.display = mode === "tree" ? "block" : "none"
-            document.getElementById("explorer-view").style.display = mode === "explorer" ? "grid" : "none"
-
-            if (mode === "explorer" && !skipRender) {
-                renderExplorer()
-            }
-        }
-
-        setViewMode(viewMode, { persist: false, skipRender: true })
-
-        document
-            .getElementById("tree-view-btn")
-            .addEventListener("click", () => setViewMode("tree"))
-        document
-            .getElementById("explorer-view-btn")
-            .addEventListener("click", () => setViewMode("explorer"))
-
-        const sortLabels = {
-            default: "Sort: Default",
-            "name-asc": "Name (A–Z)",
-            "name-desc": "Name (Z–A)",
-            type: "Type",
-        }
-
-        const sortDropdown = document.getElementById("sort-dropdown")
-        const sortSelectBtn = document.getElementById("sort-select-btn")
-        const sortSelectLabel = document.getElementById("sort-select-label")
-        const sortSelectMenu = document.getElementById("sort-select-menu")
-
-        function isSortMenuOpen() {
-            return sortSelectMenu.style.display !== "none"
-        }
-
-        function openSortMenu() {
-            sortSelectMenu.style.display = "block"
-            sortSelectBtn.setAttribute("aria-expanded", "true")
-        }
-
-        function closeSortMenu() {
-            sortSelectMenu.style.display = "none"
-            sortSelectBtn.setAttribute("aria-expanded", "false")
-        }
-
-        function setSortMode(mode, options = {}) {
-            const { persist = true, apply = true } = options
-
-            sortMode = mode
-            sortSelectLabel.textContent = sortLabels[mode] ?? sortLabels.default
-
-            sortSelectMenu
-                .querySelectorAll(".sort-select-option")
-                .forEach((option) => {
-                    const isSelected = option.dataset.value === mode
-                    option.classList.toggle("selected", isSelected)
-                    option.setAttribute("aria-selected", String(isSelected))
-                })
-
-            if (persist) {
-                saveSortMode(mode)
-            }
-
-            if (apply) {
-                if (viewMode === "tree") {
-                    resortTree()
-                }
-                else {
-                    renderExplorer()
-                }
-            }
-        }
-
-        sortSelectBtn.addEventListener("click", (event) => {
+        if (material.type === "folder") {
+          materialRow.dataset.folderId = material.id
+          materialRow.href = `/section/${courseId}?view=tree&folder=${encodeURIComponent(material.id)}`
+          folderParentMap.set(material.id, parentId)
+          folderTitleMap.set(material.id, material.title)
+
+          let isExpanded = false
+          let isLoading = false
+
+          materialRow.addEventListener("click", async (event) => {
             event.stopPropagation()
-            isSortMenuOpen() ? closeSortMenu() : openSortMenu()
-        })
+            event.preventDefault()
+            isExpanded = !isExpanded
+            materialRow.dataset.expanded = String(isExpanded)
 
-        sortSelectMenu
-            .querySelectorAll(".sort-select-option")
-            .forEach((option) => {
-                option.addEventListener("click", () => {
-                    setSortMode(option.dataset.value)
-                    closeSortMenu()
-                })
-            })
+            folderToggle.setAttribute("aria-expanded", String(isExpanded))
+            folderToggle.classList.toggle("expanded", isExpanded)
 
-        document.addEventListener("click", (event) => {
-            if (isSortMenuOpen() && !sortDropdown.contains(event.target)) {
-                closeSortMenu()
-            }
-        })
+            if (isExpanded) {
+              treeCurrentPath = buildPathFromFolderId(material.id)
+              childrenContainer.style.display = "block"
+              addExpandedFolder(material.id)
 
-        document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape" && isSortMenuOpen()) {
-                closeSortMenu()
-            }
-        })
+              if (!isLoading) {
+                const loadingTextElement = document.createElement("li")
+                loadingTextElement.classList.add("loading")
+                loadingTextElement.textContent = "Loading contents..."
+                childrenContainer.appendChild(loadingTextElement)
 
-        setSortMode(sortMode, { persist: false, apply: false })
+                isLoading = true
+                const folderData = await fetchRetry(
+                  `/api/section/${courseId}/folder/${material.id}`,
+                )
+                folderCache.set(material.id, folderData.materials)
 
-        async function fetchRetry() {
-            while (true) {
-                try {
-                    const response = await fetch(...arguments)
-                    return await response.json()
+                loadingTextElement.remove()
+
+                if (!folderData.materials.length) {
+                  const emptyFolderText = document.createElement("li")
+                  emptyFolderText.textContent = "Empty folder"
+                  childrenContainer.appendChild(emptyFolderText)
                 }
-                catch (error) {
-                    if (error instanceof SyntaxError) {
-                        throw error
-                    }
-                    console.error(error)
+                else {
+                  const folderElements = getCourseElements(
+                    folderData.materials,
+                    material.id,
+                  )
+                  childrenContainer.appendChild(folderElements)
                 }
-            }
-        }
-
-        async function main() {
-            const [, courseData, structureResponse] = await Promise.all([
-                sidebar.ready,
-                course,
-                parentStructure,
-            ])
-            rootMaterials = courseData.materials
-
-            const rootFolderContainer = document.getElementById("root-folder")
-            rootFolderContainer.appendChild(
-                getCourseElements(courseData.materials, "root"),
-            )
-
-            const initialPath = [{ id: "root", title: "Course Materials" }]
-            for (const folder of structureResponse.structure) {
-                initialPath.push({
-                    id: getStructureFolderId(folder),
-                    title: folder.title,
-                })
-            }
-
-            treeCurrentPath = initialPath.slice()
-
-            if (viewMode === "explorer") {
-                resetExplorerHistory(initialPath)
-                renderExplorer()
+              }
             }
             else {
-                if (requestedFolderId) {
-                    await syncTreeToPath(initialPath)
-                }
-
-                if (rememberExpandedFoldersEnabled && expandedFolderIds.size) {
-                    const remainingFolderIds = [...expandedFolderIds].filter(
-                        (id) => id !== requestedFolderId,
-                    )
-                    await restoreExpandedFolders(remainingFolderIds)
-                }
+              childrenContainer.style.display = "none"
+              removeExpandedFolder(material.id)
             }
+          })
+        }
+        else {
+          materialRow.href = `/section/${courseId}/folder/${parentId}/material/${material.id}`
+          folderToggle.textContent = ""
         }
 
-        main()
+        materialsList.appendChild(materialClone)
+      }
 
-        async function loadCourseDetails() {
-            const nameEl = document.getElementById("course-name")
-            const subjectEl = document.getElementById("course-subject")
+      return materialsList
+    }
 
-            try {
-                const data = await fetchRetry(
-                    `/api/section_details/${encodeURIComponent(courseId)}`,
-                )
+    function compareTreeRows(itemA, itemB) {
+      const rowA = itemA.querySelector(":scope > .material-row")
+      const rowB = itemB.querySelector(":scope > .material-row")
+      const titleA = rowA?.dataset.title ?? ""
+      const titleB = rowB?.dataset.title ?? ""
 
-                if (data.status !== "ok" || !data.section) {
-                    throw new Error(data.message ?? "Section not found")
-                }
+      switch (sortMode) {
+        case "name-asc":
+          return titleA.localeCompare(titleB)
+        case "name-desc":
+          return titleB.localeCompare(titleA)
+        case "type":
+          return (
+            (rowA?.dataset.type ?? "").localeCompare(
+              rowB?.dataset.type ?? "",
+            ) || titleA.localeCompare(titleB)
+          )
+        default:
+          return (
+            Number(rowA?.dataset.originalIndex ?? 0) - Number(rowB?.dataset.originalIndex ?? 0)
+          )
+      }
+    }
 
-                const { title, subject } = data.section
+    function resortMaterialsList(listEl) {
+      if (!listEl) {
+        return
+      }
 
-                nameEl.textContent = title
-                document.title = title
+      const items = Array.from(listEl.children).filter((child) =>
+        child.classList.contains("material-item"),
+      )
+      items.sort(compareTreeRows)
+      items.forEach((item) => listEl.appendChild(item))
 
-                if (subject) {
-                    subjectEl.textContent = subject
-                    subjectEl.style.display = "block"
-                }
-            }
-            catch (error) {
-                console.error(error)
-                nameEl.textContent = "Course"
-            }
+      items.forEach((item) => {
+        const childrenContainer = item.querySelector(":scope > .children")
+        const childList = childrenContainer?.querySelector(
+          ":scope > .materials-list",
+        )
+        resortMaterialsList(childList)
+      })
+    }
+
+    function resortTree() {
+      const rootFolderContainer = document.getElementById("root-folder")
+      resortMaterialsList(
+        rootFolderContainer.querySelector(":scope > .materials-list"),
+      )
+    }
+
+    async function syncTreeToPath(path) {
+      if (!rootMaterials) {
+        return
+      }
+
+      const rootFolderContainer = document.getElementById("root-folder")
+      let folderContainer = rootFolderContainer
+
+      for (const crumb of path) {
+        if (crumb.id === "root") {
+          continue
         }
 
-        loadCourseDetails()
-    </script>
+        const folderRow = folderContainer.querySelector(
+          `[data-folder-id="${crumb.id}"]`,
+        )
+        if (!folderRow) {
+          break
+        }
 
-    <template id="material-template">
-        <li class="material-item">
-            <a class="material-row">
-                <div class="folder-toggle">▶</div>
-                <div class="material-icon"></div>
-                <div class="material-title"></div>
-            </a>
+        folderContainer = await expandFolderRow(folderRow)
+      }
 
-            <ul class="children" style="display: none"></ul>
-        </li>
-    </template>
+      treeCurrentPath = path.slice()
+
+      const targetId = path[path.length - 1]?.id
+      if (targetId && targetId !== "root") {
+        //rootFolderContainer.querySelector(`[data-folder-id="${targetId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+      }
+    }
+
+    async function restoreExpandedFolders(folderIds) {
+      for (const folderId of folderIds) {
+        try {
+          const structureResponse = await fetchRetry(
+            `/api/parent_structure?section_id=${encodeURIComponent(courseId)}&folder_id=${encodeURIComponent(folderId)}`,
+          )
+
+          const path = [{ id: "root", title: "Course Materials" }]
+          for (const folder of structureResponse.structure) {
+            path.push({
+              id: getStructureFolderId(folder),
+              title: folder.title,
+            })
+          }
+
+          await syncTreeToPath(path)
+        }
+        catch (error) {
+          console.error(error)
+        }
+      }
+    }
+
+    async function getFolderMaterials(
+      folderId,
+      { forceRefresh = false } = {},
+    ) {
+      if (folderId === "root") {
+        if (forceRefresh) {
+          const courseData = await fetchRetry(`/api/section/${courseId}`)
+          rootMaterials = courseData.materials
+        }
+        return rootMaterials
+      }
+
+      if (!forceRefresh && folderCache.has(folderId)) {
+        return folderCache.get(folderId)
+      }
+
+      const folderData = await fetchRetry(
+        `/api/section/${courseId}/folder/${folderId}`,
+      )
+      folderCache.set(folderId, folderData.materials)
+      return folderData.materials
+    }
+
+    async function expandFolderRow(folderRow) {
+      if (folderRow.dataset.expanded !== "true") {
+        folderRow.click()
+        while (folderRow.nextElementSibling.querySelector(".loading")) {
+          await new Promise((resolve) => setTimeout(resolve, 0))
+        }
+      }
+
+      return folderRow.nextElementSibling
+    }
+
+    function getStructureFolderId(folder) {
+      const folderId = folder.id || folder.folderId || folder["@id"]
+      return String(folderId).split("/").pop()
+    }
+
+    function navigateExplorerTo(newPath, options = {}) {
+      const { pushHistory = true } = options
+
+      explorerPath = newPath
+
+      if (pushHistory) {
+        explorerHistory = explorerHistory.slice(0, explorerHistoryIndex + 1)
+        explorerHistory.push(newPath.slice())
+        explorerHistoryIndex = explorerHistory.length - 1
+      }
+
+      updateCourseUrl(explorerPath[explorerPath.length - 1].id, "explorer")
+      renderExplorer()
+    }
+
+    function resetExplorerHistory(path) {
+      explorerPath = path
+      explorerHistory = [path.slice()]
+      explorerHistoryIndex = 0
+    }
+
+    function explorerGoBack() {
+      if (explorerHistoryIndex <= 0) {
+        return
+      }
+
+      explorerHistoryIndex -= 1
+      explorerPath = explorerHistory[explorerHistoryIndex].slice()
+      updateCourseUrl(explorerPath[explorerPath.length - 1].id, "explorer")
+      renderExplorer()
+    }
+
+    function explorerGoForward() {
+      if (explorerHistoryIndex >= explorerHistory.length - 1) {
+        return
+      }
+
+      explorerHistoryIndex += 1
+      explorerPath = explorerHistory[explorerHistoryIndex].slice()
+      updateCourseUrl(explorerPath[explorerPath.length - 1].id, "explorer")
+      renderExplorer()
+    }
+
+    function explorerGoUp() {
+      if (explorerPath.length <= 1) {
+        return
+      }
+
+      navigateExplorerTo(explorerPath.slice(0, -1))
+    }
+
+    async function explorerRefresh() {
+      const currentFolder = explorerPath[explorerPath.length - 1]
+      await getFolderMaterials(currentFolder.id, { forceRefresh: true })
+      renderExplorer()
+    }
+
+    function buildExplorerToolbar() {
+      const toolbar = document.createElement("div")
+      toolbar.classList.add("explorer-toolbar")
+
+      const backBtn = document.createElement("button")
+      backBtn.type = "button"
+      backBtn.classList.add("toolbar-btn")
+      backBtn.title = "Back"
+      backBtn.setAttribute("aria-label", "Back")
+      backBtn.textContent = "←"
+      backBtn.disabled = explorerHistoryIndex <= 0
+      backBtn.addEventListener("click", explorerGoBack)
+
+      const forwardBtn = document.createElement("button")
+      forwardBtn.type = "button"
+      forwardBtn.classList.add("toolbar-btn")
+      forwardBtn.title = "Forward"
+      forwardBtn.setAttribute("aria-label", "Forward")
+      forwardBtn.textContent = "→"
+      forwardBtn.disabled = explorerHistoryIndex >= explorerHistory.length - 1
+      forwardBtn.addEventListener("click", explorerGoForward)
+
+      const upBtn = document.createElement("button")
+      upBtn.type = "button"
+      upBtn.classList.add("toolbar-btn")
+      upBtn.title = "Up one level"
+      upBtn.setAttribute("aria-label", "Up one level")
+      upBtn.textContent = "↑"
+      upBtn.disabled = explorerPath.length <= 1
+      upBtn.addEventListener("click", explorerGoUp)
+
+      const refreshBtn = document.createElement("button")
+      refreshBtn.type = "button"
+      refreshBtn.classList.add("toolbar-btn")
+      refreshBtn.title = "Refresh"
+      refreshBtn.setAttribute("aria-label", "Refresh")
+      refreshBtn.textContent = "⟳"
+      refreshBtn.addEventListener("click", () => {
+        refreshBtn.disabled = true
+        explorerRefresh().finally(() => {
+          refreshBtn.disabled = false
+        })
+      })
+
+      toolbar.appendChild(backBtn)
+      toolbar.appendChild(forwardBtn)
+      toolbar.appendChild(upBtn)
+      toolbar.appendChild(refreshBtn)
+
+      return toolbar
+    }
+
+    async function renderExplorer() {
+      const container = document.getElementById("explorer-view")
+      container.innerHTML = ""
+
+      container.appendChild(buildExplorerToolbar())
+
+      const breadcrumb = document.createElement("div")
+      breadcrumb.classList.add("breadcrumb")
+
+      explorerPath.forEach((crumb, i) => {
+        const isLast = i === explorerPath.length - 1
+        const crumbEl = document.createElement("span")
+        crumbEl.classList.add("breadcrumb-item")
+        crumbEl.textContent = crumb.title
+
+        if (!isLast) {
+          crumbEl.classList.add("breadcrumb-link")
+          crumbEl.addEventListener("click", () => {
+            navigateExplorerTo(explorerPath.slice(0, i + 1))
+          })
+          breadcrumb.appendChild(crumbEl)
+
+          const sep = document.createElement("span")
+          sep.classList.add("breadcrumb-sep")
+          sep.textContent = "›"
+          breadcrumb.appendChild(sep)
+        }
+        else {
+          crumbEl.classList.add("breadcrumb-current")
+          breadcrumb.appendChild(crumbEl)
+        }
+      })
+
+      container.appendChild(breadcrumb)
+
+      const currentFolder = explorerPath[explorerPath.length - 1]
+
+      const loadingEl = document.createElement("div")
+      loadingEl.classList.add("loading")
+      loadingEl.textContent = "Loading contents..."
+      container.appendChild(loadingEl)
+
+      const materials = sortMaterials(
+        await getFolderMaterials(currentFolder.id),
+        sortMode,
+      )
+      loadingEl.remove()
+
+      if (!materials.length) {
+        const emptyEl = document.createElement("div")
+        emptyEl.classList.add("explorer-empty")
+        emptyEl.textContent = "Empty folder"
+        container.appendChild(emptyEl)
+        return
+      }
+
+      const list = document.createElement("ul")
+      list.classList.add("explorer-list")
+
+      materials.forEach((material) => {
+        const item = document.createElement("li")
+        item.classList.add("explorer-item")
+
+        const row = document.createElement("a")
+        row.classList.add("explorer-row")
+
+        const icon = document.createElement("div")
+        icon.classList.add("material-icon")
+        setMaterialIcon(icon, material)
+
+        const title = document.createElement("div")
+        title.classList.add("material-title")
+        title.textContent = material.title
+
+        row.appendChild(icon)
+        row.appendChild(title)
+
+        if (material.type === "folder") {
+          row.addEventListener("click", (event) => {
+            event.preventDefault()
+            navigateExplorerTo([
+              ...explorerPath,
+              { id: material.id, title: material.title },
+            ])
+          })
+        }
+        else {
+          row.href = `/section/${courseId}/folder/${currentFolder.id}/material/${material.id}`
+        }
+
+        item.appendChild(row)
+        list.appendChild(item)
+      })
+
+      container.appendChild(list)
+    }
+
+    function setViewMode(mode, options = {}) {
+      const { persist = true, skipRender = false } = options
+
+      viewMode = mode
+
+      if (persist) {
+        saveViewMode(mode)
+        const currentPath = mode === "explorer" ? explorerPath : treeCurrentPath
+        updateCourseUrl(currentPath[currentPath.length - 1].id, mode)
+      }
+
+      document
+        .getElementById("tree-view-btn")
+        .classList.toggle("active", mode === "tree")
+      document
+        .getElementById("explorer-view-btn")
+        .classList.toggle("active", mode === "explorer")
+
+      document
+        .querySelector(".page")
+        .classList.toggle("explorer-mode", mode === "explorer")
+
+      document.getElementById("root-folder").style.display = mode === "tree" ? "block" : "none"
+      document.getElementById("explorer-view").style.display = mode === "explorer" ? "grid" : "none"
+
+      if (mode === "explorer" && !skipRender) {
+        renderExplorer()
+      }
+    }
+
+    setViewMode(viewMode, { persist: false, skipRender: true })
+
+    document
+      .getElementById("tree-view-btn")
+      .addEventListener("click", () => setViewMode("tree"))
+    document
+      .getElementById("explorer-view-btn")
+      .addEventListener("click", () => setViewMode("explorer"))
+
+    const sortLabels = {
+      default: "Sort: Default",
+      "name-asc": "Name (A–Z)",
+      "name-desc": "Name (Z–A)",
+      type: "Type",
+    }
+
+    const sortDropdown = document.getElementById("sort-dropdown")
+    const sortSelectBtn = document.getElementById("sort-select-btn")
+    const sortSelectLabel = document.getElementById("sort-select-label")
+    const sortSelectMenu = document.getElementById("sort-select-menu")
+
+    function isSortMenuOpen() {
+      return sortSelectMenu.style.display !== "none"
+    }
+
+    function openSortMenu() {
+      sortSelectMenu.style.display = "block"
+      sortSelectBtn.setAttribute("aria-expanded", "true")
+    }
+
+    function closeSortMenu() {
+      sortSelectMenu.style.display = "none"
+      sortSelectBtn.setAttribute("aria-expanded", "false")
+    }
+
+    function setSortMode(mode, options = {}) {
+      const { persist = true, apply = true } = options
+
+      sortMode = mode
+      sortSelectLabel.textContent = sortLabels[mode] ?? sortLabels.default
+
+      sortSelectMenu
+        .querySelectorAll(".sort-select-option")
+        .forEach((option) => {
+          const isSelected = option.dataset.value === mode
+          option.classList.toggle("selected", isSelected)
+          option.setAttribute("aria-selected", String(isSelected))
+        })
+
+      if (persist) {
+        saveSortMode(mode)
+      }
+
+      if (apply) {
+        if (viewMode === "tree") {
+          resortTree()
+        }
+        else {
+          renderExplorer()
+        }
+      }
+    }
+
+    sortSelectBtn.addEventListener("click", (event) => {
+      event.stopPropagation()
+      isSortMenuOpen() ? closeSortMenu() : openSortMenu()
+    })
+
+    sortSelectMenu
+      .querySelectorAll(".sort-select-option")
+      .forEach((option) => {
+        option.addEventListener("click", () => {
+          setSortMode(option.dataset.value)
+          closeSortMenu()
+        })
+      })
+
+    document.addEventListener("click", (event) => {
+      if (isSortMenuOpen() && !sortDropdown.contains(event.target)) {
+        closeSortMenu()
+      }
+    })
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && isSortMenuOpen()) {
+        closeSortMenu()
+      }
+    })
+
+    setSortMode(sortMode, { persist: false, apply: false })
+
+    async function fetchRetry() {
+      while (true) {
+        try {
+          const response = await fetch(...arguments)
+          return await response.json()
+        }
+        catch (error) {
+          if (error instanceof SyntaxError) {
+            throw error
+          }
+          console.error(error)
+        }
+      }
+    }
+
+    async function main() {
+      const [, courseData, structureResponse] = await Promise.all([
+        sidebar.ready,
+        course,
+        parentStructure,
+      ])
+      rootMaterials = courseData.materials
+
+      const rootFolderContainer = document.getElementById("root-folder")
+      rootFolderContainer.appendChild(
+        getCourseElements(courseData.materials, "root"),
+      )
+
+      const initialPath = [{ id: "root", title: "Course Materials" }]
+      for (const folder of structureResponse.structure) {
+        initialPath.push({
+          id: getStructureFolderId(folder),
+          title: folder.title,
+        })
+      }
+
+      treeCurrentPath = initialPath.slice()
+
+      if (viewMode === "explorer") {
+        resetExplorerHistory(initialPath)
+        renderExplorer()
+      }
+      else {
+        if (requestedFolderId) {
+          await syncTreeToPath(initialPath)
+        }
+
+        if (rememberExpandedFoldersEnabled && expandedFolderIds.size) {
+          const remainingFolderIds = [...expandedFolderIds].filter(
+            (id) => id !== requestedFolderId,
+          )
+          await restoreExpandedFolders(remainingFolderIds)
+        }
+      }
+    }
+
+    main()
+
+    async function loadCourseDetails() {
+      const nameEl = document.getElementById("course-name")
+      const subjectEl = document.getElementById("course-subject")
+
+      try {
+        const data = await fetchRetry(
+          `/api/section_details/${encodeURIComponent(courseId)}`,
+        )
+
+        if (data.status !== "ok" || !data.section) {
+          throw new Error(data.message ?? "Section not found")
+        }
+
+        const { title, subject } = data.section
+
+        nameEl.textContent = title
+        document.title = title
+
+        if (subject) {
+          subjectEl.textContent = subject
+          subjectEl.style.display = "block"
+        }
+      }
+      catch (error) {
+        console.error(error)
+        nameEl.textContent = "Course"
+      }
+    }
+
+    loadCourseDetails()
+  </script>
+
+  <template id="material-template">
+    <li class="material-item">
+      <a class="material-row">
+        <div class="folder-toggle">▶</div>
+        <div class="material-icon"></div>
+        <div class="material-title"></div>
+      </a>
+
+      <ul class="children" style="display: none"></ul>
+    </li>
+  </template>
 </body>
 
 </html>

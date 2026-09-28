@@ -9,33 +9,69 @@
     <link rel="stylesheet" href="/app.css" />
     <link rel="stylesheet" href="/assignments-search.css" />
     <script src="/app.js"></script>
+    <script src="/back.js"></script>
     <style>
+        :root {
+            --calendar-gap: 8px;
+            --calendar-cell-min-height: 116px;
+            --calendar-radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .app-page-dashboard {
+            min-height: 100vh;
+        }
+
         .home-toolbar {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
-            gap: 12px;
+            gap: 16px;
             flex-wrap: wrap;
-            width: 100%;
+            width: min(100%, 1500px);
+            margin: 0 auto 18px;
+            padding: 4px 0;
         }
 
         .home-toolbar #assignments-search {
             flex: 0 1 480px;
-            min-width: 0;
+            min-width: min(100%, 280px);
             width: min(100%, 480px);
         }
 
         .home-toolbar .search-bar {
             max-width: none;
+            margin: 0;
         }
 
         .page-actions {
             display: flex;
             flex: 0 0 auto;
             align-items: center;
-            gap: 12px;
-            min-height: 36px;
-            margin-bottom: 4px;
+            gap: 6px;
+            min-height: 40px;
+            padding: 4px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface);
+            box-shadow: 0 2px 10px rgb(0 0 0 / 12%);
+        }
+
+        .page-actions .settings-link {
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 6px 11px;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        .page-actions .settings-link:hover,
+        .page-actions .settings-link:focus-visible {
+            background: var(--surface-strong);
         }
 
         h1,
@@ -45,65 +81,124 @@
         }
 
         .main-layout {
-            flex: 1 1 auto;
+            width: min(100%, 1500px);
+            margin: 0 auto;
             display: flex;
             flex-direction: row;
             gap: 18px;
             min-width: 0;
             min-height: 0;
-            width: 100%;
         }
 
         .calendar-section {
             flex: 1 1 auto;
             min-width: 0;
-            min-height: 0;
             display: flex;
             flex-direction: column;
+            padding: 18px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--surface);
+            box-shadow: 0 8px 28px rgb(0 0 0 / 14%);
         }
 
         .calendar-header {
-            flex: 0 0 auto;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             flex-wrap: wrap;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
         }
 
         .calendar-title {
-            font-size: 1.5rem;
+            font-size: clamp(1.3rem, 2vw, 1.65rem);
+            line-height: 1.2;
             color: var(--text-strong);
-            min-width: 11ch;
+            flex: 0 0 auto;
+            width: 15ch;
+            white-space: nowrap;
         }
 
         .calendar-controls {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            padding: 3px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface-strong);
         }
 
         .calendar-button {
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
+            min-width: 38px;
+            min-height: 34px;
+            background: transparent;
+            border: 0;
+            border-radius: 7px;
             color: var(--text-strong);
             cursor: pointer;
             font: inherit;
-            padding: 6px 12px;
+            font-weight: 600;
+            padding: 5px 10px;
             transition:
-                color 0.25s ease,
-                border-color 0.25s ease;
+                background var(--motion-duration) var(--motion-easing),
+                color var(--motion-duration) var(--motion-easing);
         }
 
         .calendar-button:hover,
         .calendar-button:focus-visible {
             color: var(--accent);
+            background: rgb(79 140 255 / 12%);
+            outline: none;
+        }
+
+        .calendar-button:active {
+            transform: translateY(1px);
+        }
+
+        #today-button {
+            min-height: 42px;
+            padding-inline: 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface-strong);
+        }
+
+        #today-button:hover,
+        #today-button:focus-visible {
             border-color: var(--accent);
         }
 
         .calendar-export {
             margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            min-height: 36px;
+            padding: 7px 12px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            text-decoration: none;
+            font-weight: 600;
+            transition:
+                color var(--motion-duration) var(--motion-easing),
+                background var(--motion-duration) var(--motion-easing),
+                border-color var(--motion-duration) var(--motion-easing);
+        }
+
+        .calendar-export:hover,
+        .calendar-export:focus-visible {
+            color: var(--accent);
+            background: rgb(79 140 255 / 10%);
+            border-color: var(--accent);
+        }
+
+        .loading {
+            min-height: 34px;
+            display: grid;
+            place-items: center;
+            margin: 0 0 10px;
+            font-size: 0.9rem;
+            color: var(--muted);
         }
 
         .calendar-scroll {
@@ -111,120 +206,155 @@
             min-height: 0;
             overflow-y: auto;
             padding: 2px;
+            scrollbar-gutter: stable;
         }
 
         .calendar-weekdays,
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 6px;
+            gap: var(--calendar-gap);
         }
 
         .calendar-weekdays {
-            margin-bottom: 6px;
-            font-size: 0.85rem;
+            margin-bottom: var(--calendar-gap);
+            padding: 0 3px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--muted);
             text-align: center;
         }
 
-        .calendar-day {
-            background: rgb(255 255 255 / 9%);
-            border: 1px solid rgb(148 163 184 / 40%);
-            border-radius: var(--radius-sm);
-            box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
-            color: var(--text);
-            min-height: 110px;
-            padding: 6px;
-            font-size: 0.85rem;
-            overflow: hidden;
+        .calendar-weekdays>div {
+            padding: 4px;
         }
 
-        .calendar-day--other {
-            background: rgb(255 255 255 / 4%);
+        .calendar-day {
+            position: relative;
+            min-height: var(--calendar-cell-min-height);
+            padding: 9px;
+            overflow: hidden;
+            background: rgb(255 255 255 / 7%);
+            border: 1px solid var(--border);
+            border-radius: var(--calendar-radius);
+            color: var(--text);
+            box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+            font-size: 0.82rem;
+            transition:
+                border-color var(--motion-duration) var(--motion-easing),
+                background var(--motion-duration) var(--motion-easing);
+        }
+
+        .calendar-day:hover {
+            background: rgb(255 255 255 / 10%);
+            border-color: rgb(148 163 184 / 65%);
+        }
+
+        .calendar-day-other {
+            background: rgb(255 255 255 / 2%);
             border-color: var(--border);
             box-shadow: none;
-            opacity: 0.6;
+            opacity: 0.48;
         }
 
-        .calendar-day--today {
-            background: rgb(79 140 255 / 16%);
+        .calendar-day-today {
+            background: rgb(79 140 255 / 9%);
             border-color: var(--accent);
-            box-shadow: 0 0 0 2px var(--focus-ring);
+            box-shadow:
+                inset 0 0 0 1px rgb(79 140 255 / 18%),
+                0 0 0 2px var(--focus-ring);
         }
 
         .calendar-day-number {
-            display: block;
-            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            margin-bottom: 6px;
+            border-radius: 8px;
             color: var(--text);
-            font-weight: 600;
+            font-weight: 700;
         }
 
-        .calendar-day--today .calendar-day-number {
-            color: var(--accent);
-            font-weight: bold;
+        .calendar-day-today .calendar-day-number {
+            color: white;
+            background: var(--accent);
+            font-weight: 800;
         }
 
         .calendar-item {
             display: block;
-            margin-top: 3px;
-            padding: 2px 6px;
-            border-radius: var(--radius-sm);
-            background: rgb(79 140 255 / 24%);
+            margin-top: 4px;
+            padding: 5px 7px;
+            border-radius: 7px;
+            background: rgb(79 140 255 / 15%);
             border-left: 3px solid var(--accent);
             color: var(--text-strong);
             text-decoration: none;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            transition: background var(--motion-duration) var(--motion-easing);
+            line-height: 1.25;
+            transition:
+                background var(--motion-duration) var(--motion-easing),
+                transform var(--motion-duration) var(--motion-easing);
         }
 
-        .calendar-item:hover {
-            background: rgb(79 140 255 / 38%);
+        .calendar-item:hover,
+        .calendar-item:focus-visible {
+            background: rgb(79 140 255 / 28%);
+            transform: translateX(1px);
+            outline: none;
         }
 
-        .calendar-item--overdue {
-            background: rgb(248 113 113 / 24%);
+        .calendar-item-overdue {
+            background: rgb(248 113 113 / 13%);
             border-left-color: var(--overdue);
         }
 
-        .calendar-item--overdue:hover {
-            background: rgb(248 113 113 / 38%);
-        }
-
-        .loading {
-            text-align: center;
-            margin: 20px 0;
-            font-size: 14px;
-            color: var(--muted);
+        .calendar-item-overdue:hover,
+        .calendar-item-overdue:focus-visible {
+            background: rgb(248 113 113 / 26%);
         }
 
         .calendar-scroll::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
+        }
+
+        .calendar-scroll::-webkit-scrollbar-track {
+            background: transparent;
         }
 
         .calendar-scroll::-webkit-scrollbar-thumb {
             background: var(--surface-strong);
+            border: 2px solid transparent;
             border-radius: 999px;
+            background-clip: padding-box;
         }
 
         .logout-button {
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
+            background: transparent;
+            border: 0;
+            border-radius: 8px;
             color: #d93025;
             cursor: pointer;
             font: inherit;
-            padding: 6px 12px;
+            font-weight: 600;
+            min-height: 34px;
+            padding: 6px 11px;
             transition:
-                color 0.25s ease,
-                border-color 0.25s ease;
+                color var(--motion-duration) var(--motion-easing),
+                background var(--motion-duration) var(--motion-easing);
         }
 
         .logout-button:hover,
         .logout-button:focus-visible {
             color: #b3261e;
-            border-color: #b3261e;
+            background: rgb(211 48 37 / 10%);
+            outline: none;
         }
 
         .logout-button:disabled {
@@ -232,57 +362,149 @@
             cursor: default;
         }
 
-        @media (width <=720px) {
-            .main-layout {
-                flex-direction: column;
+        @media (width <=900px) {
+            .home-toolbar {
+                align-items: stretch;
             }
 
-            .calendar-scroll {
-                overflow: visible;
+            .home-toolbar #assignments-search {
+                flex-basis: 100%;
+            }
+
+            .page-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+        @media (width <=720px) {
+            :root {
+                --calendar-gap: 5px;
+                --calendar-cell-min-height: 76px;
+                --calendar-radius: 10px;
+            }
+
+            .home-toolbar,
+            .main-layout {
+                width: 100%;
+            }
+
+            .home-toolbar {
+                margin-bottom: 10px;
+            }
+
+            .page-actions {
+                justify-content: stretch;
+            }
+
+            .page-actions .settings-link,
+            .logout-button {
+                flex: 1;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .calendar-section {
+                padding: 10px;
+                border-radius: 14px;
+            }
+
+            .calendar-header {
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .calendar-title {
+                width: auto;
+                min-width: 0;
+                flex: 1 0 100%;
+            }
+
+            .calendar-controls {
+                order: 2;
+            }
+
+            .calendar-export {
+                margin-left: auto;
+                order: 2;
             }
 
             .calendar-day {
-                min-height: 70px;
-                padding: 4px;
+                padding: 5px;
+                font-size: 0.72rem;
             }
 
-            .home-toolbar .page-actions {
-                margin-left: auto;
+            .calendar-day-number {
+                width: 24px;
+                height: 24px;
+                margin-bottom: 3px;
+            }
+
+            .calendar-item {
+                padding: 3px 4px;
+                border-left-width: 2px;
+            }
+
+            .calendar-weekdays {
+                font-size: 0.68rem;
+            }
+
+            #today-button {
+                order: 2;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .calendar-button,
+            .calendar-export,
+            .calendar-item,
+            .calendar-day,
+            .logout-button {
+                transition: none;
+            }
+
+            .calendar-item:active {
+                transform: none;
             }
         }
     </style>
 </head>
 
-<body class="app-page app-page--dashboard">
+<body class="app-page app-page-dashboard">
     <div class="home-toolbar">
         <div id="assignments-search"></div>
-
         <nav class="page-actions" aria-label="Page actions">
+            <a class="settings-link" data-back-button data-back-fallback="/home"></a>
             <a class="settings-link" href="/home">Home</a>
-            <a class="settings-link" href="/settings">Settings</a>
+            <a class="settings-link" data-settings-link href="/settings">Settings</a>
             <button type="button" id="logout-button" class="logout-button">
                 Log out
             </button>
         </nav>
     </div>
-
     <div class="main-layout">
-        <section class="calendar-section">
+        <section class="calendar-section" aria-labelledby="month-title">
             <div class="calendar-header">
                 <h2 id="month-title" class="calendar-title"></h2>
                 <div class="calendar-controls">
-                    <button type="button" id="prev-month" class="calendar-button"
-                        aria-label="Previous month">&lt;</button>
-                    <button type="button" id="today-button" class="calendar-button">Today</button>
-                    <button type="button" id="next-month" class="calendar-button" aria-label="Next month">&gt;</button>
+                    <button type="button" id="prev-month" class="calendar-button" aria-label="Previous month">
+                        &lt;
+                    </button>
+                    <button type="button" id="next-month" class="calendar-button" aria-label="Next month">
+                        &gt;
+                    </button>
                 </div>
+                <button type="button" id="today-button" class="calendar-button">
+                    Today
+                </button>
                 <a class="settings-link calendar-export" href="/api/calendar.ics">Export .ics</a>
             </div>
-
-            <div id="loading" class="loading">Loading...</div>
-
+            <div id="loading" class="loading" role="status" aria-live="polite">
+                Loading calendar…
+            </div>
             <div class="calendar-scroll">
-                <div class="calendar-weekdays" aria-hidden="true">
+                <div class="calendar-weekdays" aria-hidden="true" role="presentation">
                     <div>Sun</div>
                     <div>Mon</div>
                     <div>Tue</div>
@@ -295,39 +517,29 @@
             </div>
         </section>
     </div>
-
     <script src="/assignments-search.js"></script>
     <script>
         const calendarGridElement = document.getElementById("calendar-grid")
         const monthTitleElement = document.getElementById("month-title")
         const loadingTextElement = document.getElementById("loading")
-
         let calendarItems = new Map()
         let viewDate = startOfMonth(new Date())
-
         const items = fetchCalendarItems()
         init()
         window.initAssignmentsSearch({ mountId: "assignments-search" })
-
         async function init() {
             loadingTextElement.textContent = "Loading..."
-
             const itemList = await items
-
             if (itemList) {
                 calendarItems = groupByDay(itemList)
             }
-
             renderCalendar()
-
             loadingTextElement.textContent = ""
             loadingTextElement.style.display = "none"
         }
-
         function normalizeItem(material, overdue) {
             const sectionId = material.parent?.section_id
             const folderId = material.parent?.folder_id || "root"
-
             return {
                 title: material.title || "Untitled",
                 due: material.dueDate ? new Date(material.dueDate) : new Date(NaN),
@@ -335,21 +547,17 @@
                 overdue,
             }
         }
-
         async function fetchMaterials(url, overdue) {
             let attemptCount = 0
-
             while (true) {
                 try {
                     const response = await fetchWithRetry(url)
                     const data = await response.json()
-
                     if (data.status === "error") {
                         loadingTextElement.textContent = "Failed to load assignments."
                         console.error(data.message)
                         return []
                     }
-
                     return (data.materials || []).map((material) =>
                         normalizeItem(material, overdue),
                     )
@@ -361,152 +569,120 @@
                 }
             }
         }
-
         async function fetchCalendarItems() {
             const [upcoming, overdue] = await Promise.all([
                 fetchMaterials("/api/upcoming", false),
                 fetchMaterials("/api/overdue", true),
             ])
-
             return [...upcoming, ...overdue].filter(
                 (item) => !Number.isNaN(item.due.getTime()),
             )
         }
-
         function startOfMonth(date) {
             return new Date(date.getFullYear(), date.getMonth(), 1)
         }
-
         function groupByDay(itemList) {
             const grouped = new Map()
-
             for (const item of itemList) {
                 const key = item.due.toDateString()
-
                 if (!grouped.has(key)) {
                     grouped.set(key, [])
                 }
-
                 grouped.get(key).push(item)
             }
-
             for (const dayItems of grouped.values()) {
                 dayItems.sort((itemOne, itemTwo) => itemOne.due - itemTwo.due)
             }
-
             return grouped
         }
-
         function renderCalendar() {
             calendarGridElement.innerHTML = ""
-
             monthTitleElement.textContent = viewDate.toLocaleString(undefined, {
                 month: "long",
                 year: "numeric",
             })
-
             const dayTemplate = document.getElementById("day-template")
             const itemTemplate = document.getElementById("item-template")
             const todayKey = new Date().toDateString()
-
             const firstCell = new Date(viewDate)
             firstCell.setDate(1 - viewDate.getDay())
-
             for (let index = 0; index < 42; index++) {
                 const date = new Date(firstCell)
                 date.setDate(firstCell.getDate() + index)
-
                 const dayClone = dayTemplate.content.cloneNode(true)
                 const dayElement = dayClone.querySelector(".calendar-day")
                 const dayNumber = dayClone.querySelector(".calendar-day-number")
-
                 dayNumber.textContent = date.getDate()
-
                 if (date.getMonth() !== viewDate.getMonth()) {
-                    dayElement.classList.add("calendar-day--other")
+                    dayElement.classList.add("calendar-day-other")
                 }
-
                 if (date.toDateString() === todayKey) {
-                    dayElement.classList.add("calendar-day--today")
+                    dayElement.classList.add("calendar-day-today")
                 }
-
                 for (const item of calendarItems.get(date.toDateString()) || []) {
                     const itemClone = itemTemplate.content.cloneNode(true)
                     const itemLink = itemClone.querySelector(".calendar-item")
-
                     const time = item.due.toLocaleTimeString([], {
                         hour: "numeric",
                         minute: "2-digit",
                     })
-
                     itemLink.textContent = `${time} ${item.title}`
                     itemLink.title = item.title
                     itemLink.href = item.url
-
                     if (item.overdue) {
-                        itemLink.classList.add("calendar-item--overdue")
+                        itemLink.classList.add("calendar-item-overdue")
                     }
-
                     dayElement.appendChild(itemClone)
                 }
-
                 calendarGridElement.appendChild(dayClone)
             }
         }
-
         function changeMonth(offset) {
-            viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + offset, 1)
+            viewDate = new Date(
+                viewDate.getFullYear(),
+                viewDate.getMonth() + offset,
+                1,
+            )
             renderCalendar()
         }
-
         async function logout() {
             const button = document.getElementById("logout-button")
             button.disabled = true
-
             try {
                 const response = await fetch("/api/logout", {
                     method: "POST",
                 })
-
                 const data = await response.json()
-
                 if (data.status === "ok") {
                     window.location.href = "/login"
                     return
                 }
-
                 console.error("Logout failed:", data.message)
             }
             catch (error) {
                 console.error("Error logging out:", error)
             }
-
             button.disabled = false
         }
-
         document
             .getElementById("prev-month")
             .addEventListener("click", () => changeMonth(-1))
         document
             .getElementById("next-month")
             .addEventListener("click", () => changeMonth(1))
-        document
-            .getElementById("today-button")
-            .addEventListener("click", () => {
-                viewDate = startOfMonth(new Date())
-                renderCalendar()
-            })
+        document.getElementById("today-button").addEventListener("click", () => {
+            viewDate = startOfMonth(new Date())
+            renderCalendar()
+        })
         document
             .getElementById("logout-button")
             .addEventListener("click", logout)
     </script>
-
     <template id="day-template">
         <div class="calendar-day">
             <span class="calendar-day-number"></span>
         </div>
     </template>
-
     <template id="item-template">
         <a class="calendar-item"></a>
     </template>

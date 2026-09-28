@@ -14,14 +14,17 @@ module.exports = [
       globals: {
         ...globals.browser,
         console: "readonly",
+        DEFAULT_SETTINGS: "readonly",
         DOMPurify: "readonly",
         EasyMDE: "readonly",
         eval: "readonly",
         fetchWithRetry: "readonly",
         gapi: "readonly",
+        getStoredSetting: "readonly",
         google: "readonly",
         marked: "readonly",
         Quill: "readonly",
+        SETTINGS_KEYS: "readonly",
       },
       parserOptions: {
         ecmaVersion: 2022,
@@ -52,3 +55,4 @@ module.exports = [
     },
   },
 ]
+//Install Command: npm install --save-dev eslint @stylistic/eslint-plugin globals eslint-plugin-html

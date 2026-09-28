@@ -185,3 +185,31 @@ body[data-show-assignments="false"] #assignments-sidebar {
         padding: 12px;
     }
 }
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+    width: fit-content;
+}
+
+.back-btn:hover {
+    background: rgb(255 255 255 / 10%);
+    border-color: rgb(148 163 184 / 28%);
+    transform: translateY(-1px);
+}
+
+[data-back-button][aria-disabled="true"] {
+    opacity: 0.45;
+    pointer-events: none;
+    cursor: default;
+}

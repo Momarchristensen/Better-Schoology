@@ -91,11 +91,7 @@ function applyStoredSettings() {
 initializeSettings()
 
 function updateSettingsLinks() {
-    document.querySelectorAll(".settings-link").forEach((link) => {
-        if (link.id === "return-link") {
-            return
-        }
-
+    document.querySelectorAll("[data-settings-link]").forEach((link) => {
         const returnPath = `${window.location.pathname}${window.location.search}`
         link.href = `/settings?return=${encodeURIComponent(returnPath)}`
     })

@@ -2,356 +2,358 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/logo.svg" />
-    <title>Home</title>
-    <link rel="stylesheet" href="/app.css" />
-    <link rel="stylesheet" href="/assignments-sidebar.css" />
-    <link rel="stylesheet" href="/assignments-search.css" />
-    <script src="/app.js"></script>
-    <style>
-        .home-toolbar {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            width: 100%;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/logo.svg" />
+  <title>Home</title>
+  <link rel="stylesheet" href="/app.css" />
+  <link rel="stylesheet" href="/assignments-sidebar.css" />
+  <link rel="stylesheet" href="/assignments-search.css" />
+  <script src="/app.js"></script>
+  <script src="/back.js"></script>
+  <style>
+    .home-toolbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
 
-        .home-toolbar #assignments-search {
-            flex: 0 1 480px;
-            min-width: 0;
-            width: min(100%, 480px);
-        }
+    .home-toolbar #assignments-search {
+      flex: 0 1 480px;
+      min-width: 0;
+      width: min(100%, 480px);
+    }
 
-        .home-toolbar .search-bar {
-            max-width: none;
-        }
+    .home-toolbar .search-bar {
+      max-width: none;
+    }
 
-        .page-actions {
-            display: flex;
-            flex: 0 0 auto;
-            align-items: center;
-            gap: 12px;
-            min-height: 36px;
-            margin-bottom: 4px;
-        }
+    .page-actions {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 36px;
+      margin-bottom: 4px;
+    }
 
-        h1,
-        h2,
-        h3 {
-            margin: 0;
-        }
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+    }
 
-        .main-layout {
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: row;
-            gap: 18px;
-            min-width: 0;
-            min-height: 0;
-            width: 100%;
-        }
+    .main-layout {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: row;
+      gap: 18px;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+    }
 
-        .courses-section {
-            flex: 1 1 auto;
-            min-width: 0;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-        }
+    .courses-section {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
 
-        .courses-section h2 {
-            flex: 0 0 auto;
-            font-size: 0.95rem;
-            color: var(--text-strong);
-            margin-bottom: 10px;
-        }
+    .courses-section h2 {
+      flex: 0 0 auto;
+      font-size: 0.95rem;
+      color: var(--text-strong);
+      margin-bottom: 10px;
+    }
 
-        .courses-title {
-            font-size: 1.5rem !important;
-        }
+    .courses-title {
+      font-size: 1.5rem !important;
+    }
 
-        .courses-scroll {
-            flex: 1 1 auto;
-            min-height: 0;
-            overflow-y: auto;
-            padding: 8px 2px 0;
-        }
+    .courses-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 8px 2px 0;
+    }
 
-        .course-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px 12px;
-            list-style: none;
-            padding: 0 2px 4px;
-            margin: 0;
-        }
+    .course-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px 12px;
+      list-style: none;
+      padding: 0 2px 4px;
+      margin: 0;
+    }
 
-        .course-card {
-            width: 100%;
-            transition:
-                transform 0.25s ease,
-                box-shadow 0.25s ease;
-            border-radius: var(--radius);
-        }
+    .course-card {
+      width: 100%;
+      transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+      border-radius: var(--radius);
+    }
 
-        .course-card:hover {
-            transform: translateY(-6px) scale(1.02);
-            box-shadow: var(--shadow);
-        }
+    .course-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: var(--shadow);
+    }
 
-        .course-card-frame {
-            background: rgb(255, 255, 255, 98%);
-            height: 150px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-        }
+    .course-card-frame {
+      background: rgb(255 255 255 / 98%);
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
 
-        .course-card-background {
-            width: 100%;
-            height: auto;
-            object-fit: contain;
-            object-position: center;
-            transition: transform 0.3s ease;
-        }
+    .course-card-background {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      object-position: center;
+      transition: transform 0.3s ease;
+    }
 
-        .course-card-background:hover,
-        .course-card-background:focus {
-            transform: scale(1.08);
-        }
+    .course-card-background:hover,
+    .course-card-background:focus {
+      transform: scale(1.08);
+    }
 
-        .course-card-frame:hover .course-card-background {
-            transform: scale(1.08);
-        }
+    .course-card-frame:hover .course-card-background {
+      transform: scale(1.08);
+    }
 
-        .course-title {
-            margin-top: 8px;
-            color: var(--text-strong);
-            transition: color 0.25s ease;
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
+    .course-title {
+      margin-top: 8px;
+      color: var(--text-strong);
+      transition: color 0.25s ease;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
 
-        .course-card:hover .course-title {
-            color: var(--accent);
-        }
+    .course-card:hover .course-title {
+      color: var(--accent);
+    }
 
-        .loading {
-            text-align: center;
-            margin: 20px 0;
-            font-size: 14px;
-            color: var(--muted);
-        }
+    .loading {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 14px;
+      color: var(--muted);
+    }
 
-        .courses-scroll::-webkit-scrollbar {
-            width: 6px;
-        }
+    .courses-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
 
-        .courses-scroll::-webkit-scrollbar-thumb {
-            background: var(--surface-strong);
-            border-radius: 999px;
-        }
+    .courses-scroll::-webkit-scrollbar-thumb {
+      background: var(--surface-strong);
+      border-radius: 999px;
+    }
 
-        .logout-button {
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            color: #d93025;
-            cursor: pointer;
-            font: inherit;
-            padding: 6px 12px;
-            transition:
-                color 0.25s ease,
-                border-color 0.25s ease;
-        }
+    .logout-button {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: #d93025;
+      cursor: pointer;
+      font: inherit;
+      padding: 6px 12px;
+      transition:
+        color 0.25s ease,
+        border-color 0.25s ease;
+    }
 
-        .logout-button:hover,
-        .logout-button:focus-visible {
-            color: #b3261e;
-            border-color: #b3261e;
-        }
+    .logout-button:hover,
+    .logout-button:focus-visible {
+      color: #b3261e;
+      border-color: #b3261e;
+    }
 
-        .logout-button:disabled {
-            opacity: 0.6;
-            cursor: default;
-        }
+    .logout-button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
 
-        @media (width <=720px) {
-            .main-layout {
-                flex-direction: column;
-            }
+    @media (width <=720px) {
+      .main-layout {
+        flex-direction: column;
+      }
 
-            .courses-scroll {
-                overflow: visible;
-            }
+      .courses-scroll {
+        overflow: visible;
+      }
 
-            .course-list {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
+      .course-list {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
 
-            .home-toolbar .page-actions {
-                margin-left: auto;
-            }
-        }
-    </style>
+      .home-toolbar .page-actions {
+        margin-left: auto;
+      }
+    }
+  </style>
 </head>
 
 <body class="app-page app-page--dashboard">
-    <div class="home-toolbar">
-        <div id="assignments-search"></div>
+  <div class="home-toolbar">
+    <div id="assignments-search"></div>
 
-        <nav class="page-actions" aria-label="Page actions">
-            <a class="settings-link" href="/settings">Settings</a>
-            <button type="button" id="logout-button" class="logout-button">
-                Log out
-            </button>
-        </nav>
-    </div>
+    <nav class="page-actions" aria-label="Page actions">
+      <a class="settings-link" data-back-button></a>
+      <a class="settings-link" data-settings-link href="/settings">Settings</a>
+      <button type="button" id="logout-button" class="logout-button">
+        Log out
+      </button>
+    </nav>
+  </div>
 
-    <div class="main-layout">
-        <div id="assignments-sidebar"></div>
+  <div class="main-layout">
+    <div id="assignments-sidebar"></div>
 
-        <section class="courses-section">
-            <h2 class="courses-title">Courses</h2>
-            <div id="loading" class="loading">Loading...</div>
-            <div class="courses-scroll">
-                <ul id="course-list" class="course-list"></ul>
-            </div>
-        </section>
-    </div>
+    <section class="courses-section">
+      <h2 class="courses-title">Courses</h2>
+      <div id="loading" class="loading">Loading...</div>
+      <div class="courses-scroll">
+        <ul id="course-list" class="course-list"></ul>
+      </div>
+    </section>
+  </div>
 
-    <script src="/assignments-sidebar.js"></script>
-    <script src="/assignments-search.js"></script>
-    <script>
-        const coursesListElement = document.getElementById("course-list")
-        const loadingTextElement = document.getElementById("loading")
+  <script src="/assignments-sidebar.js"></script>
+  <script src="/assignments-search.js"></script>
+  <script>
+    const coursesListElement = document.getElementById("course-list")
+    const loadingTextElement = document.getElementById("loading")
 
-        const courses = fetchCoursesData()
-        const sidebar = window.initAssignmentsSidebar({
-            mountId: "assignments-sidebar",
-            waitFor: courses,
+    const courses = fetchCoursesData()
+    const sidebar = window.initAssignmentsSidebar({
+      mountId: "assignments-sidebar",
+      waitFor: courses,
+    })
+    init()
+    window.initAssignmentsSearch({ mountId: "assignments-search" })
+
+    async function init() {
+      loadingTextElement.textContent = "Loading..."
+
+      const [courseList] = await Promise.all([courses, sidebar.ready])
+
+      if (courseList) {
+        renderCourses(courseList)
+      }
+
+      loadingTextElement.textContent = ""
+      loadingTextElement.style.display = "none"
+    }
+
+    async function fetchCoursesData() {
+      const response = await fetchCourses()
+      const data = await response.json()
+
+      if (data.status === "error") {
+        loadingTextElement.textContent = "Failed to load classes."
+        console.error(data.message)
+        return null
+      }
+
+      return data.courses
+    }
+
+    async function fetchCourses() {
+      let attemptCount = 0
+
+      while (true) {
+        try {
+          const response = await fetchWithRetry("/api/courses")
+          return response
+        }
+        catch (error) {
+          attemptCount++
+          loadingTextElement.textContent = `${attemptCount > 1 ? `Attempt ${attemptCount}: ` : ""}Failed to load courses. Retrying...`
+          console.error("Error fetching courses:", error)
+        }
+      }
+    }
+
+    function renderCourses(courseList) {
+      coursesListElement.innerHTML = ""
+
+      courseList.sort(
+        (courseOne, courseTwo) =>
+          (courseTwo.hasMaterials === true) - (courseOne.hasMaterials === true),
+      )
+
+      const courseTemplate = document.getElementById("course-template")
+
+      for (let index = 0; index < courseList.length; index++) {
+        const course = courseList[index]
+        const courseClone = courseTemplate.content.cloneNode(true)
+
+        const courseCardBackground = courseClone.querySelector(
+          ".course-card-background",
+        )
+        const courseCardTitle = courseClone.querySelector(".course-title")
+        const courseLink = courseClone.querySelector(".course-link")
+
+        courseCardBackground.src = course.logo
+        courseCardBackground.alt = course.title
+        courseCardTitle.textContent = course.title
+        courseLink.href = `/section/${course.id}`
+
+        coursesListElement.appendChild(courseClone)
+      }
+    }
+
+    async function logout() {
+      const button = document.getElementById("logout-button")
+      button.disabled = true
+
+      try {
+        const response = await fetch("/api/logout", {
+          method: "POST",
         })
-        init()
-        window.initAssignmentsSearch({ mountId: "assignments-search" })
 
-        async function init() {
-            loadingTextElement.textContent = "Loading..."
+        const data = await response.json()
 
-            const [courseList] = await Promise.all([courses, sidebar.ready])
-
-            if (courseList) {
-                renderCourses(courseList)
-            }
-
-            loadingTextElement.textContent = ""
-            loadingTextElement.style.display = "none"
+        if (data.status === "ok") {
+          window.location.href = "/login"
+          return
         }
 
-        async function fetchCoursesData() {
-            const response = await fetchCourses()
-            const data = await response.json()
+        console.error("Logout failed:", data.message)
+      }
+      catch (error) {
+        console.error("Error logging out:", error)
+      }
 
-            if (data.status === "error") {
-                loadingTextElement.textContent = "Failed to load classes."
-                console.error(data.message)
-                return null
-            }
+      button.disabled = false
+    }
 
-            return data.courses
-        }
+    document
+      .getElementById("logout-button")
+      .addEventListener("click", logout)
+  </script>
 
-        async function fetchCourses() {
-            let attemptCount = 0
-
-            while (true) {
-                try {
-                    const response = await fetchWithRetry("/api/courses")
-                    return response
-                }
-                catch (error) {
-                    attemptCount++
-                    loadingTextElement.textContent = `${attemptCount > 1 ? `Attempt ${attemptCount}: ` : ""}Failed to load courses. Retrying...`
-                    console.error("Error fetching courses:", error)
-                }
-            }
-        }
-
-        function renderCourses(courseList) {
-            coursesListElement.innerHTML = ""
-
-            courseList.sort(
-                (courseOne, courseTwo) =>
-                    (courseTwo.hasMaterials === true) - (courseOne.hasMaterials === true),
-            )
-
-            const courseTemplate = document.getElementById("course-template")
-
-            for (let index = 0; index < courseList.length; index++) {
-                const course = courseList[index]
-                const courseClone = courseTemplate.content.cloneNode(true)
-
-                const courseCardBackground = courseClone.querySelector(
-                    ".course-card-background",
-                )
-                const courseCardTitle = courseClone.querySelector(".course-title")
-                const courseLink = courseClone.querySelector(".course-link")
-
-                courseCardBackground.src = course.logo
-                courseCardBackground.alt = course.title
-                courseCardTitle.textContent = course.title
-                courseLink.href = `/section/${course.id}`
-
-                coursesListElement.appendChild(courseClone)
-            }
-        }
-
-        async function logout() {
-            const button = document.getElementById("logout-button")
-            button.disabled = true
-
-            try {
-                const response = await fetch("/api/logout", {
-                    method: "POST",
-                })
-
-                const data = await response.json()
-
-                if (data.status === "ok") {
-                    window.location.href = "/login"
-                    return
-                }
-
-                console.error("Logout failed:", data.message)
-            }
-            catch (error) {
-                console.error("Error logging out:", error)
-            }
-
-            button.disabled = false
-        }
-
-        document
-            .getElementById("logout-button")
-            .addEventListener("click", logout)
-    </script>
-
-    <template id="course-template">
-        <li class="course-card">
-            <a class="course-link">
-                <div class="course-card-frame">
-                    <img class="course-card-background" />
-                </div>
-                <h2 class="course-title"></h2>
-            </a>
-        </li>
-    </template>
+  <template id="course-template">
+    <li class="course-card">
+      <a class="course-link">
+        <div class="course-card-frame">
+          <img class="course-card-background" />
+        </div>
+        <h2 class="course-title"></h2>
+      </a>
+    </li>
+  </template>
 </body>
 
 </html>

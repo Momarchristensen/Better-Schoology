@@ -21,7 +21,7 @@ def main() -> int:
         print("A release version is required.", file=sys.stderr)
         return 1
 
-    tag = version if version.lower().startswith("v") else f"v{version}"
+    tag = f"v{version[1:]}" if version[:1].lower() == "v" else f"v{version}"
     if not VERSION_PATTERN.fullmatch(tag):
         print(
             "Invalid version. Use a version such as 1.2.3 or v1.2.3.",
