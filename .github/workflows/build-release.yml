@@ -26,6 +26,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Cache Whisper model
+        id: whisper-cache
+        uses: actions/cache@v4
+        with:
+          path: whisper-base
+          key: whisper-model-faster-whisper-base-v1
+
+      - name: Download Whisper model
+        if: steps.whisper-cache.outputs.cache-hit != 'true'
+        env:
+          HF_HUB_DISABLE_SYMLINKS_WARNING: "1"
+        run: |
+          python -c "from huggingface_hub import snapshot_download; snapshot_download('Systran/faster-whisper-base', local_dir='whisper-base')"
+
       - name: Embed release version
         shell: pwsh
         run: |
@@ -39,9 +53,15 @@ jobs:
         run: |
           pyinstaller --onefile --clean --name Better-Schoology `
             --collect-all lxml `
+            --collect-all faster_whisper `
+            --collect-all ctranslate2 `
+            --collect-all av `
+            --collect-all onnxruntime `
+            --collect-all tokenizers `
             --hidden-import updater `
             --add-data "HTML;HTML" `
             --add-data "libreoffice;libreoffice" `
+            --add-data "whisper-base;whisper-base" `
             --add-binary "update.exe;." `
             server.py
 

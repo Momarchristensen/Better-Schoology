@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 import httpx
 import uvicorn
+import asyncio
 from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import (
     HTMLResponse,
@@ -23,6 +24,7 @@ import mammoth
 import sys
 import tempfile
 import subprocess
+import threading
 from api_utils import (
     base_url,
     get_assignment_location,
@@ -50,6 +52,8 @@ if getattr(sys, "frozen", False):
 else:
     resource_dir = Path(__file__).resolve().parent
     data_dir = resource_dir
+
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 SOFFICE_PATH = resource_dir / "libreoffice" / "program" / "soffice.exe"
 
@@ -548,6 +552,201 @@ async def api_section(full_path: str, request: Request):
         return {"status": "error", "message": "Course not found"}
 
     return {"status": "ok", "materials": materials}
+
+
+_whisper_model = None
+_whisper_lock = threading.Lock()
+
+
+def _get_whisper_model():
+    global _whisper_model
+    if _whisper_model is None:
+        from faster_whisper import WhisperModel
+
+        # "base" is fast; use "small" or "medium" for better accuracy.
+        _whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+    return _whisper_model
+
+
+def _vtt_timestamp(seconds: float) -> str:
+    ms = int(round(seconds * 1000))
+    h, ms = divmod(ms, 3_600_000)
+    m, ms = divmod(ms, 60_000)
+    s, ms = divmod(ms, 1000)
+    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
+
+
+def generate_vtt(media_bytes: bytes, suffix: str, on_progress=None) -> str:
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        media_path = os.path.join(tmp_dir, f"media{suffix}")
+        with open(media_path, "wb") as f:
+            f.write(media_bytes)
+
+        lines = ["WEBVTT", ""]
+        with _whisper_lock:
+            model = _get_whisper_model()
+            segments, info = model.transcribe(media_path, vad_filter=True)
+            total = info.duration or 0
+            for seg in segments:
+                if on_progress and total:
+                    on_progress(min(seg.end / total, 1.0))
+                text = seg.text.strip()
+                if not text:
+                    continue
+                lines.append(
+                    f"{_vtt_timestamp(seg.start)} --> {_vtt_timestamp(seg.end)}"
+                )
+                lines.append(text)
+                lines.append("")
+
+        return "\n".join(lines)
+
+
+
+_caption_jobs: dict[str, dict] = {}
+_background_tasks: set = set()
+
+
+async def _run_caption_job(job_id: str, token: dict, url: str):
+    job = _caption_jobs[job_id]
+    try:
+        chunks = []
+        async with httpx.AsyncClient(
+            http2=True, verify=False, follow_redirects=True, trust_env=False
+        ) as client:
+            client.cookies.update(token)
+            async with client.stream("GET", url, timeout=None) as r:
+                if r.status_code != 200:
+                    raise Exception(f"Failed to fetch video (HTTP {r.status_code})")
+                total = int(r.headers.get("content-length") or 0)
+                received = 0
+                async for chunk in r.aiter_bytes():
+                    chunks.append(chunk)
+                    received += len(chunk)
+                    if total:
+                        job["progress"] = 0.15 * received / total
+                filename = extract_filename(url, r.headers)
+
+        media = b"".join(chunks)
+        suffix = Path(filename).suffix or ".mp4"
+
+        job["status"] = "transcribing"
+        job["progress"] = 0.15
+
+        def on_progress(frac: float):
+            job["progress"] = 0.15 + 0.85 * frac
+
+        vtt = await run_in_threadpool(generate_vtt, media, suffix, on_progress)
+
+        write_cache(
+            job_id,
+            vtt.encode("utf-8"),
+            filename="captions.vtt",
+            media_type="text/vtt",
+            kind="raw",
+        )
+        job.update(status="done", progress=1.0)
+    except Exception as exc:
+        job.update(status="error", error=str(exc))
+
+
+
+@app.api_route("/captions", methods=["GET", "POST"])
+async def api_captions(request: Request):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not token:
+        raise HTTPException(status_code=401, detail="No session token")
+
+    url = request.query_params.get("url")
+    upload_bytes: Optional[bytes] = None
+    suffix = ".mp4"
+
+    if request.method == "POST":
+        form = await request.form()
+        url = form.get("url") or url
+        upload = form.get("file")
+        if upload is not None and getattr(upload, "filename", None):
+            upload_bytes = await upload.read()
+            suffix = Path(upload.filename).suffix or ".mp4"
+
+    if not upload_bytes and not url:
+        raise HTTPException(status_code=400, detail="Provide a video file or url")
+
+    if upload_bytes:
+        cache_key = "captions-" + hashlib.sha256(upload_bytes).hexdigest()
+    else:
+        cache_key = "captions-" + get_cache_key(url)
+
+    cached_meta = read_cache(cache_key)
+    if cached_meta:
+        return serve_cached(cached_meta)
+
+    if not upload_bytes:
+        async with httpx.AsyncClient(
+            http2=True, verify=False, follow_redirects=True, trust_env=False
+        ) as client:
+            client.cookies.update(token)
+            r = await client.get(url, timeout=None)
+        if r.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to fetch video")
+        upload_bytes = r.content
+        suffix = Path(extract_filename(url, r.headers)).suffix or ".mp4"
+
+    try:
+        vtt = await run_in_threadpool(generate_vtt, upload_bytes, suffix)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Caption generation failed: {exc}")
+
+    write_cache(
+        cache_key,
+        vtt.encode("utf-8"),
+        filename="captions.vtt",
+        media_type="text/vtt",
+        kind="raw",
+    )
+
+    return FastAPIResponse(
+        content=vtt,
+        media_type="text/vtt",
+        headers={"Content-Disposition": 'inline; filename="captions.vtt"'},
+    )
+
+
+
+
+@app.get("/captions/start")
+async def captions_start(request: Request, url: str):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not token:
+        raise HTTPException(status_code=401, detail="No session token")
+
+    job_id = "captions-" + get_cache_key(url)  # same key /captions uses for its cache
+
+    if read_cache(job_id):
+        return {"job": job_id, "status": "done", "progress": 1.0}
+
+    job = _caption_jobs.get(job_id)
+    if not job or job["status"] == "error":
+        _caption_jobs[job_id] = {"status": "downloading", "progress": 0.0, "error": None}
+        task = asyncio.create_task(_run_caption_job(job_id, token, url))
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
+
+    return {"job": job_id, **_caption_jobs[job_id]}
+
+
+@app.get("/captions/status")
+async def captions_status(request: Request, job: str):
+    if not parse_session_cookie(request.cookies.get("sessionToken")):
+        raise HTTPException(status_code=401, detail="No session token")
+
+    info = _caption_jobs.get(job)
+    if not info:
+        if read_cache(job):
+            return {"status": "done", "progress": 1.0, "error": None}
+        raise HTTPException(status_code=404, detail="Unknown job")
+    return info
+
 
 
 @app.get("/api/parent_structure")
