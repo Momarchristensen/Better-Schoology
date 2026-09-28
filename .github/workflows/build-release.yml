@@ -49,6 +49,11 @@ jobs:
           $contents = $contents -replace '__version__ = .*', "__version__ = `"$version`""
           Set-Content $path $contents -Encoding utf8
 
+      - name: Build updater
+        run: |
+          pyinstaller --onefile --noconsole --clean --name update update.py
+          Copy-Item dist/update.exe update.exe
+
       - name: Build executable
         run: |
           pyinstaller --onefile --clean --name Better-Schoology `

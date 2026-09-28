@@ -42,5 +42,8 @@ pnpm-debug.log*
 Thumbs.db
 
 
+#Builds
+/update.exe
+
 # Test Scripts
 /test*.py

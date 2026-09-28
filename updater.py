@@ -23,7 +23,6 @@ DOWNLOAD_HEADERS = {
 }
 
 MIN_EXE_SIZE = 1 * 1024 * 1024
-MAX_EXE_SIZE = 100 * 1024 * 1024
 EXE_MAGIC = b"MZ"
 MAIN_EXE_NAME = "Better-Schoology.exe"
 
@@ -55,10 +54,10 @@ def find_exe_asset(assets: list) -> Optional[dict]:
                 print(f"Skipping asset '{name}': expected '{MAIN_EXE_NAME}'.")
             continue
         size = asset.get("size", 0)
-        if not (MIN_EXE_SIZE <= size <= MAX_EXE_SIZE):
+        if not (MIN_EXE_SIZE <= size):
             print(
                 f"Skipping asset '{name}': size {size} bytes is outside "
-                f"expected range ({MIN_EXE_SIZE}-{MAX_EXE_SIZE})."
+                f"expected range ({MIN_EXE_SIZE}-infinity)."
             )
             continue
         return asset
@@ -105,10 +104,10 @@ def check_for_update(timeout: float = 5.0) -> Optional[dict]:
 
 def _validate_exe_file(path: Path):
     size = path.stat().st_size
-    if not (MIN_EXE_SIZE <= size <= MAX_EXE_SIZE):
+    if not (MIN_EXE_SIZE <= size):
         raise UpdateValidationError(
             f"Downloaded file size {size} bytes is outside expected range "
-            f"({MIN_EXE_SIZE}-{MAX_EXE_SIZE})."
+            f"({MIN_EXE_SIZE}-infinity)."
         )
 
     with open(path, "rb") as f:
