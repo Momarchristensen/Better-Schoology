@@ -1,53 +1,64 @@
-# Python
+# ── Python ────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
-.python-version
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
+.python-version
 
-# Virtual environments
+# ── Virtual environments ──────────────────────────────
 .venv/
 venv/
 env/
 ENV/
 
-# Generated application data
-cached_files/*
-!cached_files/.gitkeep
+# ── Secrets / local config ────────────────────────────
+# config.example.json is the tracked template
 config.json
-*.log
+.env
+.env.*
+!.env.example
 
-# PyInstaller build artifacts
+# ── Runtime data (written next to server.py when run from source) ──
+cached_files/
+*.log
+libreoffice/
+libreoffice.tmp/
+libreoffice.zip
+libreoffice.zip.part
+
+# ── Whisper model (downloaded in CI / at runtime) ─────
+whisper-base/
+
+# ── PyInstaller / build output ────────────────────────
 build/
 dist/
 *.spec
+/update.exe
+*.exe.old
 
-# Node.js tooling
+# ── Node tooling ──────────────────────────────────────
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.eslintcache
+.stylelintcache
 
-# Editor and operating-system files
+# ── Editors ───────────────────────────────────────────
 .vscode/*
-!.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/extensions.json
 .idea/
+
+# ── OS files ──────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
 
-
-#Builds
-/update.exe
-
-#Downloads
-libreoffice
-libreoffice.zip
-
-# Test Scripts
+# ── Scratch / test scripts ────────────────────────────
 /test*.py

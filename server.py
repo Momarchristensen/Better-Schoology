@@ -69,10 +69,20 @@ SOFFICE_PATH = LIBREOFFICE_DIR / "program" / "soffice.exe"
 LIBREOFFICE_SHA256 = "bc5d73a4a83a665a23701619034795b88c4f3505ac30a44f858ec5d0c4700d2b"
 print("Data Dir", data_dir)
 
-html_dir = resource_dir / "HTML"
+html_dir = resource_dir / "web"
+legacy_html_dir = resource_dir / "HTML"
+
+if legacy_html_dir.exists() and not html_dir.exists():
+    html_dir = legacy_html_dir
+
 html_dir.mkdir(parents=True, exist_ok=True)
 
-RESOURCES_DIR = html_dir / "resources"
+RESOURCES_DIR = html_dir / "static"
+legacy_resources_dir = html_dir / "resources"
+
+if not RESOURCES_DIR.exists() and legacy_resources_dir.exists():
+    RESOURCES_DIR = legacy_resources_dir
+
 RESOURCES_DIR.mkdir(parents=True, exist_ok=True)
 
 CACHE_DIR = data_dir / "cached_files"

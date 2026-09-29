@@ -217,7 +217,9 @@ npm run lint:css
 
 ```text
 Better-Schoology/
-├── HTML/                       # Frontend pages and static assets
+├── web/                        # Frontend pages and static assets
+│   ├── static/                 # CSS, JS, and browser assets
+│   └── *.html                  # App pages
 ├── libreoffice/                # Bundled LibreOffice runtime
 ├── cached_files/               # Generated local file cache
 ├── api_utils.py                # Schoology API requests and data helpers

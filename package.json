@@ -9,7 +9,7 @@
     "stylelint-config-standard": "^40.0.0"
   },
   "scripts": {
-    "lint": "eslint \"HTML/**/*.js\" \"HTML/**/*.html\"",
-    "lint:css": "stylelint \"HTML/**/*.html\""
+    "lint": "eslint \"web/**/*.js\" \"web/**/*.html\"",
+    "lint:css": "stylelint \"web/**/*.html\""
   }
 }

@@ -5,7 +5,7 @@ const html = require("eslint-plugin-html")
 
 module.exports = [
   {
-    files: ["HTML/**/*.js", "HTML/**/*.html"],
+    files: ["web/**/*.js", "web/**/*.html"],
     plugins: {
       "@stylistic": stylistic,
       html,

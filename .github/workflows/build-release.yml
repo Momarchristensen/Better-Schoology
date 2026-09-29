@@ -64,7 +64,7 @@ jobs:
             --collect-all onnxruntime `
             --collect-all tokenizers `
             --hidden-import updater `
-            --add-data "HTML;HTML" `
+            --add-data "web;web" `
             --add-data "whisper-base;whisper-base" `
             --add-binary "update.exe;." `
             server.py

@@ -30,7 +30,7 @@ run_pyinstaller(
     "--name", "Better-Schoology",
     "--collect-all", "lxml",
     "--hidden-import", "updater",
-    "--add-data", "HTML;HTML",
+    "--add-data", "web;web",
     "--add-binary", "update.exe;.",
     "server.py",
 )
