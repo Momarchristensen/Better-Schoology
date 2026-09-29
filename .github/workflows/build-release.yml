@@ -44,15 +44,15 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}"
-          $path = "updater.py"
+          $path = "app_updater.py"
           $contents = Get-Content $path -Raw
           $contents = $contents -replace '__version__ = .*', "__version__ = `"$version`""
           Set-Content $path $contents -Encoding utf8
 
       - name: Build updater
         run: |
-          pyinstaller --onefile --noconsole --clean --name update update.py
-          Copy-Item dist/update.exe update.exe
+          pyinstaller --onefile --noconsole --clean --name app_updater update_installer.py
+          Copy-Item dist/app_updater.exe app_updater.exe
 
       - name: Build executable
         run: |
@@ -63,10 +63,10 @@ jobs:
             --collect-all av `
             --collect-all onnxruntime `
             --collect-all tokenizers `
-            --hidden-import updater `
+            --hidden-import app_updater `
             --add-data "web;web" `
             --add-data "whisper-base;whisper-base" `
-            --add-binary "update.exe;." `
+            --add-binary "app_updater.exe;." `
             server.py
 
       - name: Create GitHub Release

@@ -37,7 +37,7 @@ whisper-base/
 build/
 dist/
 *.spec
-/update.exe
+/app_updater.exe
 *.exe.old
 
 # ── Node tooling ──────────────────────────────────────

@@ -159,7 +159,7 @@ def get_bundled_updater_path() -> Path:
     base = (
         Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).parent
     )
-    return base / "update.exe"
+    return base / "app_updater.exe"
 
 
 def apply_update_and_restart(download_url: str):
@@ -170,14 +170,14 @@ def apply_update_and_restart(download_url: str):
     tmp_dir = Path(tempfile.gettempdir()) / "Better-Schoology-update"
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    new_exe = tmp_dir / "new_update.exe"
+    new_exe = tmp_dir / "new_app_update.exe"
     download_update(download_url, new_exe)
 
     bundled_updater = get_bundled_updater_path()
     if not bundled_updater.is_file():
         raise FileNotFoundError(f"Bundled updater not found: {bundled_updater}")
 
-    updater_copy = tmp_dir / "update.exe"
+    updater_copy = tmp_dir / "app_updater.exe"
     shutil.copy2(bundled_updater, updater_copy)
 
     CREATE_NEW_PROCESS_GROUP = 0x00000200

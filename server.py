@@ -47,7 +47,7 @@ from api_utils import (
 )
 from error_classes import AccountNotFound, InvalidCredentials
 from get_token import get_session_token
-from updater import check_for_updates
+from app_updater import check_for_updates
 
 if getattr(sys, "frozen", False):
     resource_dir = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))

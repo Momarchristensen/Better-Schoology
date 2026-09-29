@@ -18,19 +18,19 @@ run_pyinstaller(
     "--onefile",
     "--noconsole",
     "--clean",
-    "--name", "update",
-    "update.py",
+    "--name", "app_updater",
+    "update_installer.py",
 )
 
-shutil.copy2(script_dir / "dist" / "update.exe", script_dir / "update.exe")
+shutil.copy2(script_dir / "dist" / "app_updater.exe", script_dir / "app_updater.exe")
 
 run_pyinstaller(
     "--onefile",
     "--clean",
     "--name", "Better-Schoology",
     "--collect-all", "lxml",
-    "--hidden-import", "updater",
+    "--hidden-import", "app_updater",
     "--add-data", "web;web",
-    "--add-binary", "update.exe;.",
+    "--add-binary", "app_updater.exe;.",
     "server.py",
 )
