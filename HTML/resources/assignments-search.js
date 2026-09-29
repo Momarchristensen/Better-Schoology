@@ -22,15 +22,16 @@ window.initAssignmentsSearch = function initAssignmentsSearch({ mountId, section
     const mount = document.getElementById(mountId)
 
     mount.innerHTML = `
-        <div class="search-bar">
+        <div class="search-bar${sectionId ? " search-bar--scoped" : ""}">
             <div class="search-input-wrap">
                 <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="7" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
+                ${sectionId ? "<span class=\"search-scope\">This course</span>" : ""}
                 <input class="search-input" type="text"
-                    placeholder="${sectionId ? "Search assignments in this course" : "Search courses and assignments"}"
+                    placeholder="${sectionId ? "Search assignments in this course only" : "Search all courses and assignments"}"
                     autocomplete="off" />
             </div>
             <div class="search-results"></div>
@@ -175,6 +176,13 @@ window.initAssignmentsSearch = function initAssignmentsSearch({ mountId, section
         }
 
         searchResults.innerHTML = ""
+
+        if (sectionId) {
+            const header = document.createElement("div")
+            header.className = "search-scope-header"
+            header.textContent = "Only showing results from this course"
+            searchResults.appendChild(header)
+        }
 
         for (const item of results) {
             const isCourse = item.kind === "course"

@@ -125,6 +125,48 @@
     font-size: 0.82rem;
 }
 
+/* Course-scoped search (course and material pages) */
+.search-bar--scoped .search-input-wrap {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.search-bar--scoped .search-input-wrap:focus-within {
+    background: var(--accent-soft);
+    box-shadow: inset 3px 0 0 var(--accent), 0 0 0 3px var(--focus-ring);
+}
+
+.search-bar--scoped .search-icon {
+    color: var(--accent);
+}
+
+.search-scope {
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: #fff;
+    background: var(--accent);
+    white-space: nowrap;
+}
+
+.search-scope-header {
+    padding: 6px 10px 8px;
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.search-bar--scoped .search-results {
+    border-color: var(--accent);
+}
+
 @media (max-width: 720px) {
     .search-bar {
         height: fit-content;

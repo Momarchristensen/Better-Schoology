@@ -1,3 +1,5 @@
+import certifi
+import shutil
 import json
 import hashlib
 import re
@@ -56,7 +58,16 @@ else:
 
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
-SOFFICE_PATH = resource_dir / "libreoffice" / "program" / "soffice.exe"
+
+LIBREOFFICE_URL = (
+    "https://github.com/Momarchristensen/Better-Schoology/releases/download/"
+    "libreoffice-runtime/libreoffice.zip"
+)
+
+LIBREOFFICE_DIR = data_dir / "libreoffice"
+SOFFICE_PATH = LIBREOFFICE_DIR / "program" / "soffice.exe"
+LIBREOFFICE_SHA256 = "bc5d73a4a83a665a23701619034795b88c4f3505ac30a44f858ec5d0c4700d2b"
+print("Data Dir", data_dir)
 
 html_dir = resource_dir / "HTML"
 html_dir.mkdir(parents=True, exist_ok=True)
@@ -66,6 +77,8 @@ RESOURCES_DIR.mkdir(parents=True, exist_ok=True)
 
 CACHE_DIR = data_dir / "cached_files"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
 
 PORT = 3498
 
@@ -106,6 +119,9 @@ DOCX_HTML_TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
+
+_lo_lock = threading.Lock()
+lo_status = {"state": "idle", "progress": 0.0, "error": None}
 
 def parse_session_cookie(cookie_value: Optional[str]):
     if not cookie_value:
@@ -253,6 +269,80 @@ def serve_cached(meta: dict):
     )
 
 
+def libreoffice_installed() -> bool:
+    return SOFFICE_PATH.exists()
+
+
+
+import certifi
+
+FALLBACK_HTTP_OPTIONS = {"trust_env": False, "verify": certifi.where()}
+
+
+def _download_libreoffice(zip_path: Path, **client_options) -> str:
+    """Download the zip to zip_path and return its SHA-256 hex digest."""
+    sha = hashlib.sha256()
+    with httpx.stream(
+        "GET", LIBREOFFICE_URL, follow_redirects=True, timeout=None, **client_options
+    ) as r:
+        r.raise_for_status()
+        total = int(r.headers.get("content-length") or 0)
+        done = 0
+        with open(zip_path, "wb") as f:
+            for chunk in r.iter_bytes(1 << 20):
+                f.write(chunk)
+                sha.update(chunk)
+                done += len(chunk)
+                if total:
+                    lo_status["progress"] = 0.9 * done / total
+    return sha.hexdigest()
+
+
+def ensure_libreoffice():
+    """Download and extract LibreOffice on first use (blocking, thread-safe)."""
+    if libreoffice_installed():
+        return
+
+    with _lo_lock:
+        if libreoffice_installed():
+            return
+
+        zip_path = data_dir / "libreoffice.zip.part"
+        extract_dir = data_dir / "libreoffice.tmp"
+        shutil.rmtree(extract_dir, ignore_errors=True)
+        shutil.rmtree(LIBREOFFICE_DIR, ignore_errors=True)
+
+        try:
+            lo_status.update(state="downloading", progress=0.0, error=None)
+
+            try:
+                digest = _download_libreoffice(zip_path)
+            except Exception as first_exc:
+                print(
+                    f"LibreOffice download failed ({first_exc}); retrying with fallback options",
+                    file=sys.stderr,
+                )
+                zip_path.unlink(missing_ok=True)
+                lo_status["progress"] = 0.0
+                digest = _download_libreoffice(zip_path, **FALLBACK_HTTP_OPTIONS)
+
+            if digest.lower() != LIBREOFFICE_SHA256.lower():
+                raise RuntimeError("LibreOffice download failed integrity check")
+
+            lo_status.update(state="extracting", progress=0.9)
+            with zipfile.ZipFile(zip_path) as zf:
+                zf.extractall(extract_dir)
+
+            os.replace(extract_dir, LIBREOFFICE_DIR)
+            lo_status.update(state="ready", progress=1.0)
+        except Exception as exc:
+            lo_status.update(state="error", error=str(exc))
+            shutil.rmtree(extract_dir, ignore_errors=True)
+            raise
+        finally:
+            zip_path.unlink(missing_ok=True)
+
+
 def convert_docx_to_html(docx_bytes: bytes, _ext: str) -> bytes:
     result = mammoth.convert_to_html(io.BytesIO(docx_bytes))
     html = DOCX_HTML_TEMPLATE.format(title="document", body=result.value)
@@ -260,6 +350,7 @@ def convert_docx_to_html(docx_bytes: bytes, _ext: str) -> bytes:
 
 
 def convert_ppt_to_pdf(ppt_bytes: bytes, extension: str = ".pptx") -> bytes:
+    ensure_libreoffice()
     with tempfile.TemporaryDirectory() as tmp_dir:
         ppt_path = os.path.join(tmp_dir, f"slides{extension}")
 

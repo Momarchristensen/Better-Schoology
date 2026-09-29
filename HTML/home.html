@@ -184,6 +184,21 @@
       cursor: default;
     }
 
+    .calendar-button {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: #fff;
+  padding: 6px 12px;
+  text-decoration: none;
+  transition: opacity 0.25s ease;
+}
+
+.calendar-button:hover,
+.calendar-button:focus-visible {
+  opacity: 0.85;
+}
+
     @media (width <=720px) {
       .main-layout {
         flex-direction: column;
@@ -210,6 +225,7 @@
 
     <nav class="page-actions" aria-label="Page actions">
       <a class="settings-link" data-back-button></a>
+      <a class="settings-link" href="/calendar">Calendar</a>
       <a class="settings-link" data-settings-link href="/settings">Settings</a>
       <button type="button" id="logout-button" class="logout-button">
         Log out

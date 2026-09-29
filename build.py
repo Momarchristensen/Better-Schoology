@@ -31,7 +31,6 @@ run_pyinstaller(
     "--collect-all", "lxml",
     "--hidden-import", "updater",
     "--add-data", "HTML;HTML",
-    "--add-data", "libreoffice;libreoffice",
     "--add-binary", "update.exe;.",
     "server.py",
 )

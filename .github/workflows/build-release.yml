@@ -65,7 +65,6 @@ jobs:
             --collect-all tokenizers `
             --hidden-import updater `
             --add-data "HTML;HTML" `
-            --add-data "libreoffice;libreoffice" `
             --add-data "whisper-base;whisper-base" `
             --add-binary "update.exe;." `
             server.py

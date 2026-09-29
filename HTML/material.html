@@ -7,6 +7,7 @@
   <link rel="icon" href="/logo.svg" />
   <title>Material</title>
   <link rel="stylesheet" href="/app.css" />
+  <link rel="stylesheet" href="/assignments-search.css" />
   <script src="/app.js"></script>
   <script src="/back.js"></script>
   <style>
@@ -27,6 +28,38 @@
 
     .header {
       margin-bottom: 18px;
+    }
+
+    .header-toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .header-toolbar .back-btn,
+    .header-toolbar .home-btn,
+    .header-toolbar .settings-link {
+      margin-bottom: 0;
+    }
+
+    .header-toolbar #assignments-search {
+      flex: 0 1 480px;
+      min-width: 0;
+      width: min(100%, 480px);
+    }
+
+    .header-toolbar .search-bar {
+      max-width: none;
+      margin: 0;
+    }
+
+    @media (width <=480px) {
+      .header-toolbar #assignments-search {
+        flex: 0 0 auto;
+        width: 100%;
+      }
     }
 
     .material-action,
@@ -709,6 +742,7 @@
       .header .home-btn,
       .header .back-btn,
       .header .settings-link,
+      #assignments-search,
       .submission-modal-overlay,
       .due-date-countdown,
       .add-submission-btn,
@@ -1248,10 +1282,13 @@
 <body class="app-page app-page--material">
   <div class="page">
     <div class="header">
-      <a class="home-btn" href="/home" title="Home" aria-label="Home">&#8962;</a>
-      <a class="back-btn" data-back-button></a>
-      <a id="course-btn" class="back-btn" href="#">Course</a>
-      <a class="settings-link" data-settings-link href="/settings">Settings</a>
+      <div class="header-toolbar">
+        <a class="home-btn" href="/home" title="Home" aria-label="Home">&#8962;</a>
+        <a class="back-btn" data-back-button></a>
+        <a id="course-btn" class="back-btn" href="#">Course</a>
+        <div id="assignments-search"></div>
+        <a class="settings-link" data-settings-link href="/settings">Settings</a>
+      </div>
       <h2 id="title"></h2>
     </div>
 
@@ -1265,6 +1302,7 @@
     <img id="image-lightbox-img" src="" alt="" />
   </div>
 
+  <script src="/assignments-search.js"></script>
   <script>
     const pagePath = window.location.pathname
     const pathSegments = pagePath.split("/").filter(Boolean)
@@ -1272,6 +1310,11 @@
     const sectionId = pathSegments[1]
     const folderId = pathSegments[3]
     const materialId = pathSegments[5]
+
+    window.initAssignmentsSearch({
+      mountId: "assignments-search",
+      sectionId,
+    })
 
     const GOOGLE_CLIENT_ID = "466718827887-ba34lhui574u9uuai8omhlle58154dbq.apps.googleusercontent.com"
     const GOOGLE_API_KEY = "AIzaSyDeooSWvTaOAXgRznsXz6QMA1Uu8E1_zGc"
