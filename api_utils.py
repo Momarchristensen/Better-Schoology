@@ -228,11 +228,45 @@ async def resolve_discussion(session_token, material_url):
 
 
 async def resolve_full_discussion(session_token, material):
-    raise NotImplementedError("Handle discussion")
+    material_object = resolve_graded_material(material)
+    material_object["assignmentType"] = "discussion"
+    dump_json(material)
+    return material_object
 
 
 def parse_html(text):
     return BeautifulSoup(text, "lxml")
+
+
+async def get_course_completion(course_id):
+    url = f"https://ca-net.schoology.com/course/{course_id}/materials"
+    html = await get_html(url)
+
+    completion_element = html.find("a", id="folder-completion-status")
+    if not completion_element:
+        return None
+
+    completion_url = base_url + completion_element.get("href")
+    completion_html = await get_html(completion_url)
+
+    folders = []
+    for li in completion_html.select("li.folder-item"):
+        header = li.find("div", class_="item-content", recursive=False)
+        if not header:
+            continue
+
+        title_element = header.find("div", class_="folder-title")
+        percent_element = header.find("div", class_="status")
+        if not title_element or not percent_element:
+            continue
+
+        folders.append({
+            "id": li["id"].removeprefix("folder-"),
+            "name": title_element.get_text(strip=True),
+            "percent": int(percent_element.get_text(strip=True).rstrip("%")),
+        })
+
+    return folders
 
 
 def resolve_graded_material(material):
@@ -243,6 +277,8 @@ def resolve_graded_material(material):
         for tag in soup(["script", "style", "iframe", "object", "embed", "base"]):
             tag.decompose()
 
+
+        print(soup)
         material_object["description"] = str(soup)
 
 
@@ -1089,6 +1125,11 @@ def dump_html(html: str, filename: str = "debug.html"):
     path = script_dir / filename
     path.write_text(html, encoding="utf-8")
     print(f"Dumped HTML to {path}")
+
+def dump_json(obj, filename: str = "debug.json"):
+    path = script_dir / filename
+    path.write_text(json.dumps(obj, indent=4), encoding="utf-8")
+    print(f"Dumped JSON to {path}")
 
 async def submit_assignment_files(session_token, assignment_id, files, comment=""):
     async_client.cookies.update(session_token)

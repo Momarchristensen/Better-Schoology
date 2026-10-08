@@ -1486,7 +1486,7 @@
       else if (materialType === "page") {
         materialViewer.innerHTML = material.description
       }
-      else if (materialType === "assignment") {
+      else if (materialType === "assignment" || materialType === "discussion") {
         const assignmentTemplate = document.getElementById(
           "assignment-template",
         )
@@ -1640,6 +1640,9 @@
           const documentIframe = document.createElement("iframe")
           documentIframe.src = documentUrl
           assignmentClone.appendChild(documentIframe)
+        }
+        else if (assignmentType === "discussion") {
+          assignmentClone.querySelector(".submissions-row").style.display = "none"
         }
         else if (assignmentType === "default") {
           const addSubmissionBtn = assignmentClone.querySelector(

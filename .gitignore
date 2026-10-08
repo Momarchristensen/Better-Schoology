@@ -39,6 +39,8 @@ dist/
 *.spec
 /app_updater.exe
 *.exe.old
+debug*.json
+debug*.html
 
 # ── Node tooling ──────────────────────────────────────
 node_modules/
