@@ -287,6 +287,18 @@ def serve_cached(meta: dict):
     )
 
 
+@app.get("/api/libreoffice/status")
+async def api_libreoffice_status(request: Request):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not token:
+        raise HTTPException(status_code=401, detail="No session token")
+
+    if libreoffice_installed():
+        return {"status": "ok", "state": "ready", "progress": 1.0, "error": None}
+
+    return {"status": "ok", **lo_status.copy()}
+
+
 def libreoffice_installed() -> bool:
     return SOFFICE_PATH.exists()
 
