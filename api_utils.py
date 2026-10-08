@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import json
 import os
 from urllib.parse import parse_qs, unquote, urlparse, urljoin
@@ -8,6 +9,8 @@ import asyncio
 from pathlib import Path
 import time
 from config import base_url
+from html import escape
+
 
 script_dir = Path(__file__).resolve().parent
 
@@ -1207,3 +1210,377 @@ async def submit_assignment_files(session_token, assignment_id, files, comment="
     resp = await async_client.post(submit_url, files=multipart, headers=extra_headers)
 
     return resp
+
+
+def parse_comment_time(text):
+    """
+    Convert Schoology's comment time into an ISO 8601 string for JS `new Date()`.
+
+    Handles:
+      "Wed Oct 7, 2026 at 8:52 pm"
+      "Today at 6:56 am"
+      "Yesterday at 11:03 pm"
+
+    Returns the original text unchanged if it doesn't match a known format.
+    """
+    if not text:
+        return None
+
+    cleaned = text.replace("\xa0", " ").strip()
+    date_part, sep, time_part = cleaned.partition(" at ")
+    if not sep:
+        return text
+
+    try:
+        time_value = datetime.strptime(time_part.strip(), "%I:%M %p").time()
+
+        lowered = date_part.strip().lower()
+        if lowered == "today":
+            day = datetime.now().date()
+        elif lowered == "yesterday":
+            day = (datetime.now() - timedelta(days=1)).date()
+        else:
+            day = datetime.strptime(date_part.strip(), "%a %b %d, %Y").date()
+
+        return datetime.combine(day, time_value).isoformat()
+    except ValueError:
+        return text
+
+
+# Schoology flattens replies past this depth (the captured request for a
+# reply to a level-2 comment had nested_level=3).
+MAX_NESTED_LEVEL = 3
+
+
+def _comment_depth(comment_el) -> int:
+    """1 = top-level comment, 2 = reply, ... (counts wrapping .s_comments_level divs)."""
+    return len(comment_el.find_parents("div", class_="s_comments_level"))
+
+
+def _find_form_by_id(soup, form_id):
+    for candidate in soup.find_all("form"):
+        form_id_input = candidate.find("input", {"name": "form_id"})
+        if form_id_input and form_id_input.get("value") == form_id:
+            return candidate
+    return None
+
+
+def _apply_attachments(form_data, uploaded, links):
+    form_data["file[files]"] = json.dumps(uploaded) if uploaded else ""
+    form_data.setdefault("file[recording]", "")
+    form_data.setdefault("file[resources]", "")
+    form_data.setdefault("annotation_files", "")
+    for i in range(10):
+        form_data[f"link-{i}"] = links[i] if links and i < len(links) else ""
+
+
+async def get_discussion_responses(session_token, course_id, material_id):
+    """
+    Returns a flat list of comments AND replies in page order.
+
+    Extra keys vs. before:
+      - parent_id: id of the top-level comment this reply sits under (None for
+                   top-level comments). Schoology renders reply chains flat
+                   under the thread root, so this is the thread root, not
+                   necessarily the exact comment that was replied to.
+      - depth:     1 for top-level, 2+ for replies.
+    """
+    url = f"{base_url}/course/{course_id}/materials/discussion/view/{material_id}"
+    html = await get_html(session_token, url)
+
+    comments = []
+    thread_root_id = None
+
+    # Replies live in .s_comments_level blocks that are siblings of the
+    # .discussion-card, so iterate comments directly rather than cards.
+    for comment in html.select("div.comment.s-js-comment-wrapper"):
+        comment_id = comment.get("id", "").removeprefix("comment-") or None
+        depth = _comment_depth(comment)
+
+        if depth <= 1:
+            thread_root_id = comment_id
+            parent_id = None
+        else:
+            parent_id = thread_root_id
+
+        # Look up by the comment-specific ID instead of relying on the footer's
+        # nesting: Schoology places reply footers differently from root comments.
+        like_button = (
+            html.find(id=f"s-like-c-{comment_id}") if comment_id else None
+        )
+        footer = (
+            like_button.find_parent("div", class_="comment-footer")
+            if like_button
+            else None
+        )
+        if footer is None:
+            footer = comment.find_next_sibling("div", class_="comment-footer")
+        like_count_tag = footer.select_one(".s-like-comment-icon") if footer else None
+        like_text = like_count_tag.get_text(strip=True) if like_count_tag else ""
+        likes = int(like_text) if like_text.isdigit() else 0
+
+        icon_tag = comment.select_one(".comment_picture img")
+        name_tag = comment.select_one(".comment-author a")
+        time_tag = comment.select_one(".comment-time .small")
+        body_tag = comment.select_one(".comment-body-wrapper")
+        body_text = body_tag.get_text(" ", strip=True) if body_tag else ""
+
+        comments.append({
+            "id": comment_id,
+            "parent_id": parent_id,
+            "depth": depth,
+            "icon": icon_tag["src"] if icon_tag else None,
+            "name": name_tag.get_text(strip=True) if name_tag else None,
+            "time": parse_comment_time(time_tag.get_text(strip=True)) if time_tag else None,
+            "comment": body_text or None,
+            "likes": likes,
+            "liked": _is_liked(like_button),
+        })
+
+    return comments
+
+
+async def _upload_files(session_token, files, extra_headers):
+    """
+    Upload files to Schoology's upload service.
+    `files` is a list of {"file_name": str, "file_content": bytes, "title": str (optional)}.
+    Returns the dict expected by the `file[files]` form field:
+        {file_id: {"title": ..., "encode": True}, ...}
+    """
+    upload_url = f"{base_url}/file/upload-service"
+    uploaded = {}
+
+    for f in files:
+        name = f["file_name"]
+        title = f.get("title", name)
+        content = f["file_content"]
+
+        token = await get_upload_token(session_token)
+        upload_headers = {**extra_headers, "Authorization": f"Bearer {token}"}
+        multipart = {
+            "name": (None, name),
+            "use_plain": (None, "1"),
+            "file": (name, content, "application/octet-stream"),
+        }
+
+        r = await async_client.post(upload_url, files=multipart, headers=upload_headers)
+        r.raise_for_status()
+
+        uploaded[r.json()["fileMetadataId"]] = {"title": title, "encode": True}
+
+    return uploaded
+
+
+def _comment_to_html(comment: str) -> str:
+    """Pass HTML through untouched; wrap plain text in <p dir="ltr"> paragraphs."""
+    stripped = comment.strip()
+    if stripped.startswith("<"):
+        return stripped
+    paragraphs = [p for p in stripped.split("\n") if p.strip()]
+    return "".join(f'<p dir="ltr">{escape(p)}</p>' for p in paragraphs)
+
+
+async def submit_discussion_reply(
+    session_token,
+    course_id,
+    material_id,
+    parent_comment_id,
+    comment,
+    files=None,
+    links=None,
+):
+    """
+    Reply to an existing comment (form_id = s_comment_reply_form, op = "Post Reply").
+
+    The reply form is a single hidden form on the discussion page; its `pid`
+    and `nested_level` are normally set by JS when you click "Reply", so we
+    set them ourselves.
+    """
+    async_client.cookies.update(session_token)
+    parent_comment_id = str(parent_comment_id)
+
+    page_url = f"{base_url}/course/{course_id}/materials/discussion/view/{material_id}"
+    extra_headers = {
+        "Referer": page_url,
+        "Origin": base_url,
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+
+    r = await async_client.get(page_url, headers=extra_headers)
+    r.raise_for_status()
+    soup = parse_html(r.text)
+
+    form = _find_form_by_id(soup, "s_comment_reply_form")
+    if form is None:
+        raise RuntimeError(
+            "Could not find the reply form on the discussion page. "
+            "Are you logged in, and is the discussion open for comments?"
+        )
+
+    parent_el = soup.find("div", id=f"comment-{parent_comment_id}")
+    if parent_el is None:
+        raise RuntimeError(f"Comment {parent_comment_id} not found on discussion {material_id}")
+
+    # Every <input> in the form (node_realm_id, allow_attachments, sid,
+    # form_build_id, form_token, form_id, file[*], link-*, ...).
+    form_data = {}
+    for inp in form.find_all("input"):
+        name = inp.get("name")
+        if name:
+            form_data[name] = inp.get("value", "")
+
+    uploaded = await _upload_files(session_token, files, extra_headers) if files else {}
+
+    form_data["pid"] = parent_comment_id
+    form_data["nested_level"] = str(min(_comment_depth(parent_el) + 1, MAX_NESTED_LEVEL))
+    form_data["reply"] = _comment_to_html(comment)  # <textarea name="reply">
+    _apply_attachments(form_data, uploaded, links)
+
+    form_data["form_id"] = "s_comment_reply_form"
+    form_data["op"] = "Post Reply"
+    form_data["drupal_ajax"] = "1"
+
+    action = form.get("action") or page_url
+    post_url = urljoin(page_url, action)
+
+    return await async_client.post(post_url, data=form_data, headers=extra_headers)
+
+
+async def submit_discussion_comment(
+    session_token,
+    course_id,
+    material_id,
+    comment,
+    files=None,
+    links=None,
+    reply_to=None,
+):
+    """
+    Post a top-level comment, or (if reply_to is given) a reply to that comment id.
+
+    - comment:  HTML (e.g. '<p dir="ltr">...</p>') or plain text (auto-wrapped).
+    - files:    optional list of {"file_name", "file_content", "title"?} dicts,
+                same shape as submit_assignment_files.
+    - links:    optional list of up to 10 URLs (fills link-0 ... link-9).
+    - reply_to: optional parent comment id; delegates to submit_discussion_reply.
+
+    Returns the httpx.Response from the POST.
+    """
+    if reply_to:
+        return await submit_discussion_reply(
+            session_token, course_id, material_id, reply_to, comment, files=files, links=links
+        )
+
+    async_client.cookies.update(session_token)
+
+    page_url = f"{base_url}/course/{course_id}/materials/discussion/view/{material_id}"
+    extra_headers = {
+        "Referer": page_url,
+        "Origin": base_url,
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+
+    # Load the discussion page to get the per-page hidden tokens
+    # (nid2, node_realm2, node_realm_id2, sid, target_DOM_id, form_token, ...)
+    r = await async_client.get(page_url, headers=extra_headers)
+    r.raise_for_status()
+    soup = parse_html(r.text)
+
+    form = _find_form_by_id(soup, "s_comments_post_comment_form")
+    if form is None:
+        raise RuntimeError(
+            "Could not find the comment form on the discussion page. "
+            "Are you logged in, and is the discussion open for comments?"
+        )
+
+    form_data = {}
+    for inp in form.find_all("input"):
+        name = inp.get("name")
+        if name:
+            form_data[name] = inp.get("value", "")
+
+    # Upload attachments first so we can reference them in file[files]
+    uploaded = await _upload_files(session_token, files, extra_headers) if files else {}
+
+    form_data["comment"] = _comment_to_html(comment)
+    form_data["pid"] = ""
+    _apply_attachments(form_data, uploaded, links)
+
+    form_data["op"] = "Post"
+    form_data["drupal_ajax"] = "1"
+
+    action = form.get("action") or page_url
+    post_url = urljoin(page_url, action)
+
+    return await async_client.post(post_url, data=form_data, headers=extra_headers)
+
+
+
+def _is_liked(like_btn) -> bool:
+    """Read the current state from Schoology's Like/Unlike control."""
+    if like_btn is None:
+        return False
+    classes = like_btn.get("class", [])
+    if "liked" in (classes.split() if isinstance(classes, str) else classes):
+        return True
+
+    content = like_btn.select_one(".content")
+    label = (
+        content.get_text(" ", strip=True)
+        if content
+        else like_btn.get_text(" ", strip=True)
+    )
+    label = " ".join(
+        (
+            label,
+            like_btn.get("aria-label", ""),
+            like_btn.get("title", ""),
+        )
+    ).replace("\xa0", " ").strip().lower()
+    if label.startswith("unlike") or " unlike" in label:
+        return True
+    return like_btn.get("aria-pressed", "").lower() == "true"
+
+import re
+
+def _extract_csrf(html) -> dict:
+    """Pull Schoology's CSRF token/key out of the page's inline settings JSON."""
+    raw = str(html)
+    token = re.search(r'"csrf_token"\s*:\s*"([^"]+)"', raw)
+    key = re.search(r'"csrf_key"\s*:\s*"([^"]+)"', raw)
+    if not token or not key:
+        raise RuntimeError("CSRF token/key not found on page")
+    return {"X-CSRF-Token": token.group(1), "X-CSRF-Key": key.group(1)}
+
+
+async def toggle_comment_like(session_token, course_id, material_id, comment_id, csrf_headers):
+    async_client.cookies.update(session_token)
+    page_url = f"{base_url}/course/{course_id}/materials/discussion/view/{material_id}"
+    headers = {
+        "Referer": page_url,
+        "Origin": base_url,
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "X-Requested-With": "XMLHttpRequest",
+        **csrf_headers,
+    }
+    resp = await async_client.post(f"{base_url}/like/c/{comment_id}", headers=headers)
+    resp.raise_for_status()
+    return resp
+
+
+async def set_comment_like(session_token, course_id, material_id, comment_id, liked=True):
+    html = await get_html(
+        session_token,
+        f"{base_url}/course/{course_id}/materials/discussion/view/{material_id}",
+    )
+    like_btn = html.find(id=f"s-like-c-{comment_id}")
+    if like_btn is None:
+        raise RuntimeError(f"Comment {comment_id} not found on discussion {material_id}")
+    if _is_liked(like_btn) == liked:
+        return False
+    await toggle_comment_like(
+        session_token, course_id, material_id, comment_id, _extract_csrf(html)
+    )
+    return True

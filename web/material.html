@@ -783,6 +783,150 @@
       display: none;
     }
 
+    .discussion-panel {
+      display: none;
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .discussion-panel h3 {
+      margin: 0 0 16px;
+    }
+
+    .discussion-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .discussion-panel-header h3 {
+      margin: 0;
+    }
+
+    .discussion-response-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .discussion-response {
+      padding: 14px;
+      border: 1px solid var(--soft-border);
+      border-radius: var(--radius-sm);
+      background: var(--soft-panel);
+      min-width: 0;
+    }
+
+    .discussion-response-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .discussion-response-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .discussion-response-author {
+      font-weight: 700;
+    }
+
+    .discussion-response-time {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .discussion-response-body {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+.discussion-response-like {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-strong);
+  padding: 5px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.discussion-response-like:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+    .discussion-response-like[aria-pressed="true"] {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .discussion-response-reply {
+      margin: 10px 0 0 8px;
+      border: 0;
+      background: none;
+      color: var(--link);
+      padding: 5px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .discussion-response-reply:hover {
+      text-decoration: underline;
+    }
+
+    .discussion-compose {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+      margin-bottom: 14px;
+    }
+
+    .discussion-compose-heading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .discussion-compose-label {
+      font-weight: 700;
+    }
+
+    .discussion-cancel-reply {
+      border: 0;
+      background: none;
+      color: var(--link);
+      padding: 4px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .discussion-editor-wrapper {
+      min-height: 180px;
+    }
+
+    .discussion-editor-wrapper .ql-editor {
+      min-height: 140px;
+    }
+
+    .discussion-compose button {
+      justify-self: end;
+    }
+
+    .discussion-message {
+      color: var(--muted);
+      margin: 0;
+    }
+
     .submission-modal-overlay {
       position: fixed;
       inset: 0;
@@ -1643,6 +1787,9 @@
         }
         else if (assignmentType === "discussion") {
           assignmentClone.querySelector(".submissions-row").style.display = "none"
+          const discussionPanel = assignmentClone.querySelector(".discussion-panel")
+          discussionPanel.style.display = "block"
+          loadDiscussionResponses(discussionPanel)
         }
         else if (assignmentType === "default") {
           const addSubmissionBtn = assignmentClone.querySelector(
@@ -1778,6 +1925,261 @@
         }
 
         materialViewer.appendChild(assignmentClone)
+      }
+    }
+
+    async function loadDiscussionResponses(panel) {
+      const list = panel.querySelector(".discussion-response-list")
+      const message = panel.querySelector(".discussion-message")
+      const refreshButton = panel.querySelector(".discussion-refresh")
+      const form = panel.querySelector(".discussion-compose")
+      const editorElement = form.querySelector(".submission-editor-quill")
+      const editorWrapper = form.querySelector(".submission-editor-wrapper")
+      const submitButton = form.querySelector('button[type="submit"]')
+      const composeLabel = form.querySelector(".discussion-compose-label")
+      const cancelReplyButton = form.querySelector(".discussion-cancel-reply")
+      let quill = null
+      let replyTo = null
+      let latestResponses = []
+
+      submitButton.disabled = true
+      const editorReady = ensureSubmissionLibsLoaded()
+        .then(() => {
+          quill = new Quill(editorElement, {
+            theme: "snow",
+            placeholder: "Write your response here...",
+            bounds: editorWrapper,
+            modules: {
+              toolbar: [
+                ["bold", "italic", "underline", "strike"],
+                [{ header: 1 }, { header: 2 }],
+                [{ list: "ordered" }, { list: "bullet" }],
+                ["blockquote", "code-block", "link"],
+                ["clean"],
+              ],
+            },
+          })
+          addToolbarTooltips(editorWrapper)
+          submitButton.disabled = false
+        })
+        .catch((error) => {
+          message.textContent = `Couldn't load the editor: ${error.message}`
+        })
+
+      async function refreshResponses() {
+        message.textContent = "Loading responses…"
+        const response = await fetchWithRetry(
+          `/api/discussion/${encodeURIComponent(sectionId)}/${encodeURIComponent(materialId)}/responses`,
+        )
+        const result = await response.json()
+        if (!response.ok || result.status !== "ok") {
+          throw new Error(result.detail || result.message || "Could not load discussion responses.")
+        }
+
+        latestResponses = result.responses || []
+        renderResponses()
+      }
+
+      function renderResponses() {
+        list.replaceChildren()
+        message.textContent = latestResponses.length ? "" : "No responses yet."
+        latestResponses.forEach((item) => {
+          const card = document.createElement("article")
+          card.className = "discussion-response"
+          const depth = Math.max(1, Number(item.depth) || 1)
+          card.style.marginInlineStart = `${Math.min(depth - 1, 3) * 24}px`
+
+          const header = document.createElement("div")
+          header.className = "discussion-response-header"
+          if (item.icon) {
+            const avatar = document.createElement("img")
+            avatar.className = "discussion-response-avatar"
+            avatar.src = item.icon
+            avatar.alt = ""
+            header.appendChild(avatar)
+          }
+
+          const identity = document.createElement("div")
+          const author = document.createElement("div")
+          author.className = "discussion-response-author"
+          author.textContent = item.name || "Unknown"
+          identity.appendChild(author)
+          if (item.time) {
+            const time = document.createElement("time")
+            time.className = "discussion-response-time"
+            const parsedDate = new Date(item.time)
+            time.textContent = Number.isNaN(parsedDate.getTime())
+              ? item.time
+              : parsedDate.toLocaleString()
+            if (!Number.isNaN(parsedDate.getTime())) {
+              time.dateTime = parsedDate.toISOString()
+            }
+            identity.appendChild(time)
+          }
+          header.appendChild(identity)
+          card.appendChild(header)
+
+          const body = document.createElement("div")
+          body.className = "discussion-response-body"
+          body.textContent = item.comment || ""
+          card.appendChild(body)
+
+          if (item.id) {
+            const replyButton = document.createElement("button")
+            replyButton.type = "button"
+            replyButton.className = "discussion-response-reply"
+            replyButton.textContent = "Reply"
+            replyButton.addEventListener("click", async () => {
+              replyTo = {
+                id: item.id,
+                name: item.name || "comment",
+                depth,
+                parentId: item.parent_id || item.id,
+              }
+              composeLabel.textContent = `Replying to ${replyTo.name}`
+              cancelReplyButton.hidden = false
+              submitButton.textContent = "Post reply"
+              await editorReady
+              if (quill) {
+                editorWrapper.scrollIntoView({ behavior: "smooth", block: "center" })
+                quill.focus()
+              }
+            })
+            card.appendChild(replyButton)
+
+            const likeButton = document.createElement("button")
+            likeButton.type = "button"
+            likeButton.className = "discussion-response-like"
+            likeButton.setAttribute("aria-pressed", String(Boolean(item.liked)))
+            likeButton.textContent = `${item.liked ? "Unlike" : "Like"} · ${item.likes || 0}`
+            likeButton.addEventListener("click", async () => {
+              likeButton.disabled = true
+              try {
+                const likeResponse = await fetchWithRetry(
+                  `/api/discussion/${encodeURIComponent(sectionId)}/${encodeURIComponent(materialId)}/comments/${encodeURIComponent(item.id)}/like`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ liked: !item.liked }),
+                  },
+                )
+                const likeResult = await likeResponse.json()
+                if (!likeResponse.ok || likeResult.status !== "ok") {
+                  throw new Error(likeResult.detail || "Could not update like.")
+                }
+                const nowLiked = likeResult.liked
+                const likeCount = Number(item.likes) || 0
+                item.likes = Math.max(0, likeCount + (nowLiked === item.liked ? 0 : nowLiked ? 1 : -1))
+                item.liked = nowLiked
+                likeButton.setAttribute("aria-pressed", String(nowLiked))
+                likeButton.textContent = `${nowLiked ? "Unlike" : "Like"} · ${item.likes}`
+              }
+              catch (error) {
+                message.textContent = error.message || "Could not update like."
+              }
+              finally {
+                likeButton.disabled = false
+              }
+            })
+            card.appendChild(likeButton)
+          }
+
+          list.appendChild(card)
+        })
+      }
+
+      refreshButton.addEventListener("click", async () => {
+        refreshButton.disabled = true
+        try {
+          await refreshResponses()
+        }
+        catch (error) {
+          message.textContent = error.message || "Could not load discussion responses."
+        }
+        finally {
+          refreshButton.disabled = false
+        }
+      })
+
+      function clearReplyTarget() {
+        replyTo = null
+        composeLabel.textContent = "Add a response"
+        cancelReplyButton.hidden = true
+        submitButton.textContent = "Post response"
+      }
+
+      cancelReplyButton.addEventListener("click", clearReplyTarget)
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault()
+        if (!quill || !quill.getText().trim()) {
+          message.textContent = "Write a response before posting."
+          return
+        }
+
+        submitButton.disabled = true
+        message.textContent = ""
+        try {
+          await editorReady
+          if (!quill) {
+            throw new Error("The response editor isn't available.")
+          }
+          const rawHtml = quill.root.innerHTML
+          const comment = typeof DOMPurify !== "undefined"
+            ? DOMPurify.sanitize(rawHtml)
+            : rawHtml
+          const replyTarget = replyTo
+          const endpoint = replyTarget
+            ? `/api/discussion/${encodeURIComponent(sectionId)}/${encodeURIComponent(materialId)}/comments/${encodeURIComponent(replyTarget.id)}/replies`
+            : `/api/discussion/${encodeURIComponent(sectionId)}/${encodeURIComponent(materialId)}/comments`
+          const response = await fetchWithRetry(
+            endpoint,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ comment }),
+            },
+          )
+          const result = await response.json()
+          if (!response.ok || result.status !== "ok") {
+            throw new Error(result.detail || result.message || "Could not post response.")
+          }
+          const postedText = quill.getText().trim()
+          quill.setText("")
+          clearReplyTarget()
+          if (replyTarget) {
+            const now = new Date()
+            latestResponses.push({
+              id: null,
+              parent_id: replyTarget.parentId,
+              depth: Math.min(replyTarget.depth + 1, 3),
+              icon: null,
+              name: "You",
+              time: now.toISOString(),
+              comment: postedText,
+              likes: 0,
+              liked: false,
+            })
+            renderResponses()
+            list.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+          }
+          refreshResponses().catch((error) => {
+            message.textContent = error.message || "Could not refresh discussion responses."
+          })
+        }
+        catch (error) {
+          message.textContent = error.message || "Could not post response."
+        }
+        finally {
+          submitButton.disabled = false
+        }
+      })
+
+      try {
+        await refreshResponses()
+      }
+      catch (error) {
+        message.textContent = error.message || "Could not load discussion responses."
       }
     }
 
@@ -2719,6 +3121,25 @@
     </div>
 
     <div class="comment"></div>
+
+    <section class="discussion-panel">
+      <div class="discussion-panel-header">
+        <h3>Discussion</h3>
+        <button class="material-action discussion-refresh" type="button">Refresh</button>
+      </div>
+      <form class="discussion-compose">
+        <div class="discussion-compose-heading">
+          <span class="discussion-compose-label">Add a response</span>
+          <button class="discussion-cancel-reply" type="button" hidden>Cancel reply</button>
+        </div>
+        <div class="submission-editor-wrapper discussion-editor-wrapper">
+          <div class="submission-editor-quill"></div>
+        </div>
+        <button class="material-action" type="submit">Post response</button>
+      </form>
+      <div class="discussion-response-list"></div>
+      <p class="discussion-message" role="status"></p>
+    </section>
   </template>
 
   <template id="submission-template">

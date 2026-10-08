@@ -44,6 +44,10 @@ from api_utils import (
     submit_assignment,
     submit_assignment_files,
     get_section,
+    get_discussion_responses,
+    submit_discussion_comment,
+    submit_discussion_reply,
+    set_comment_like,
 )
 from error_classes import AccountNotFound, InvalidCredentials
 from get_token import get_session_token
@@ -976,6 +980,117 @@ async def api_submit_assignment(request: Request):
         return {"status": "ok", "results": {"file_submission": "ok"}}
     except Exception as exc:
         return {"status": "error", "message": f"Submission failed: {exc}"}
+
+
+@app.get("/api/discussion/{course_id}/{material_id}/responses")
+async def api_get_discussion_responses(
+    request: Request, course_id: str, material_id: str
+):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not token:
+        raise HTTPException(status_code=401, detail="No session token")
+
+    try:
+        responses = await get_discussion_responses(token, course_id, material_id)
+        return {"status": "ok", "responses": responses}
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502, detail=f"Could not load discussion responses: {exc}"
+        ) from exc
+
+
+@app.post("/api/discussion/{course_id}/{material_id}/comments")
+async def api_submit_discussion_comment(
+    request: Request, course_id: str, material_id: str
+):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not token:
+        raise HTTPException(status_code=401, detail="No session token")
+
+    data = await request.json()
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=400, detail="Expected a JSON object")
+    comment = data.get("comment")
+    if not isinstance(comment, str) or not comment.strip():
+        raise HTTPException(status_code=400, detail="Comment cannot be empty")
+
+    try:
+        response = await submit_discussion_comment(
+            token, course_id, material_id, comment.strip()
+        )
+        if response.status_code >= 400:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Comment submission failed ({response.status_code})",
+            )
+        return {"status": "ok"}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502, detail=f"Comment submission failed: {exc}"
+        ) from exc
+
+
+@app.post(
+    "/api/discussion/{course_id}/{material_id}/comments/{parent_comment_id}/replies"
+)
+async def api_submit_discussion_reply(
+    request: Request, course_id: str, material_id: str, parent_comment_id: str
+):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not token:
+        raise HTTPException(status_code=401, detail="No session token")
+
+    data = await request.json()
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=400, detail="Expected a JSON object")
+    comment = data.get("comment")
+    if not isinstance(comment, str) or not comment.strip():
+        raise HTTPException(status_code=400, detail="Reply cannot be empty")
+
+    try:
+        response = await submit_discussion_reply(
+            token, course_id, material_id, parent_comment_id, comment.strip()
+        )
+        if response.status_code >= 400:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Reply submission failed ({response.status_code})",
+            )
+        return {"status": "ok"}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502, detail=f"Reply submission failed: {exc}"
+        ) from exc
+
+
+@app.post("/api/discussion/{course_id}/{material_id}/comments/{comment_id}/like")
+async def api_set_comment_like(
+    request: Request, course_id: str, material_id: str, comment_id: str
+):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not token:
+        raise HTTPException(status_code=401, detail="No session token")
+
+    data = await request.json()
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=400, detail="Expected a JSON object")
+    liked = data.get("liked", True)
+    if not isinstance(liked, bool):
+        raise HTTPException(status_code=400, detail="'liked' must be a boolean")
+
+    try:
+        changed = await set_comment_like(
+            token, course_id, material_id, comment_id, liked=liked
+        )
+        return {"status": "ok", "changed": changed, "liked": liked}
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502, detail=f"Could not update comment like: {exc}"
+        ) from exc
 
 
 @app.post("/save_draft")
