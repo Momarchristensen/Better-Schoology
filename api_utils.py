@@ -1240,7 +1240,6 @@ def parse_comment_time(text):
         return text
 
 
-MAX_NESTED_LEVEL = 3
 
 
 def _comment_depth(comment_el) -> int:

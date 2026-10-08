@@ -6,6 +6,7 @@ mammoth
 pyinstaller
 python-multipart
 requests
+tqdm
 uvicorn
 certifi
 faster-whisper

@@ -8,6 +8,7 @@ from typing import Optional
 import httpx
 import uvicorn
 import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import (
     HTMLResponse,
@@ -53,6 +54,7 @@ from api_utils import (
 from error_classes import AccountNotFound, InvalidCredentials
 from get_token import get_session_token
 from app_updater import check_for_updates
+from tqdm import tqdm
 
 if getattr(sys, "frozen", False):
     resource_dir = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
@@ -74,7 +76,7 @@ LIBREOFFICE_URL = (
 
 LIBREOFFICE_DIR = data_dir / "libreoffice"
 SOFFICE_PATH = LIBREOFFICE_DIR / "program" / "soffice.exe"
-LIBREOFFICE_SHA256 = "bc5d73a4a83a665a23701619034795b88c4f3505ac30a44f858ec5d0c4700d2b"
+LIBREOFFICE_SHA256 = "0fa2331cc4c4ecda24e59173fe73668c4a27f4349f9aba050e6da6596943e154"
 print("Data Dir", data_dir)
 
 html_dir = resource_dir / "web"
@@ -99,7 +101,19 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 PORT = 3498
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    libreoffice_task = asyncio.create_task(
+        _install_libreoffice_on_startup(), name="install-libreoffice"
+    )
+    try:
+        yield
+    finally:
+        await libreoffice_task
+
+
+app = FastAPI(lifespan=lifespan)
 
 DOCX_HTML_TEMPLATE = """<!DOCTYPE html>
 <html>
@@ -154,10 +168,26 @@ async def session_token_is_valid(session_token):
     if not session_token:
         return False
     async with httpx.AsyncClient(
-        http2=True, verify=True, follow_redirects=True, headers={}, trust_env=False
+        http2=True,
+        verify=True,
+        follow_redirects=True,
+        headers={},
+        trust_env=False,
+        timeout=httpx.Timeout(30.0, connect=15.0),
     ) as client:
         client.cookies.update(session_token)
-        resp = await client.get(base_url)
+        try:
+            resp = await client.get(base_url)
+        except httpx.TimeoutException as exc:
+            raise HTTPException(
+                status_code=504,
+                detail="Timed out while validating the Schoology session.",
+            ) from exc
+        except httpx.RequestError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="Could not connect to Schoology while validating the session.",
+            ) from exc
         return str(resp.url).startswith(base_url)
 
 
@@ -317,18 +347,27 @@ def _download_libreoffice(zip_path: Path, **client_options) -> str:
         r.raise_for_status()
         total = int(r.headers.get("content-length") or 0)
         done = 0
-        with open(zip_path, "wb") as f:
-            for chunk in r.iter_bytes(1 << 20):
-                f.write(chunk)
-                sha.update(chunk)
-                done += len(chunk)
-                if total:
-                    lo_status["progress"] = 0.9 * done / total
+        with tqdm(
+            total=total or None,
+            desc="Downloading LibreOffice",
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+            dynamic_ncols=True,
+        ) as progress:
+            with open(zip_path, "wb") as f:
+                for chunk in r.iter_bytes(1 << 20):
+                    f.write(chunk)
+                    sha.update(chunk)
+                    done += len(chunk)
+                    progress.update(len(chunk))
+                    if total:
+                        lo_status["progress"] = 0.9 * done / total
     return sha.hexdigest()
 
 
 def ensure_libreoffice():
-    """Download and extract LibreOffice on first use (blocking, thread-safe)."""
+    """Download and extract LibreOffice when missing (blocking, thread-safe)."""
     if libreoffice_installed():
         return
 
@@ -370,6 +409,17 @@ def ensure_libreoffice():
             raise
         finally:
             zip_path.unlink(missing_ok=True)
+
+
+async def _install_libreoffice_on_startup():
+    if libreoffice_installed():
+        lo_status.update(state="ready", progress=1.0, error=None)
+        return
+
+    try:
+        await run_in_threadpool(ensure_libreoffice)
+    except Exception as exc:
+        print(f"LibreOffice startup installation failed: {exc}", file=sys.stderr)
 
 
 def convert_docx_to_html(docx_bytes: bytes, _ext: str) -> bytes:
@@ -468,7 +518,11 @@ async def api_file(url: str, request: Request):
         return serve_cached(cached_meta)
 
     client = httpx.AsyncClient(
-        http2=True, verify=False, follow_redirects=True, trust_env=False
+        http2=True,
+        verify=False,
+        follow_redirects=True,
+        trust_env=False,
+        timeout=httpx.Timeout(60.0, connect=15.0),
     )
     client.cookies.update(token)
 
@@ -476,7 +530,20 @@ async def api_file(url: str, request: Request):
     request_headers = {"Range": range_header} if range_header else {}
 
     req = client.build_request("GET", url, headers=request_headers)
-    r = await client.send(req, stream=True)
+    try:
+        r = await client.send(req, stream=True)
+    except httpx.TimeoutException as exc:
+        await client.aclose()
+        raise HTTPException(
+            status_code=504,
+            detail="Timed out while connecting to Schoology to fetch the file.",
+        ) from exc
+    except httpx.RequestError as exc:
+        await client.aclose()
+        raise HTTPException(
+            status_code=502,
+            detail="Could not connect to Schoology to fetch the file.",
+        ) from exc
 
     if r.status_code not in (200, 206):
         await r.aclose()

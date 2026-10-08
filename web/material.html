@@ -2010,7 +2010,7 @@
           const card = document.createElement("article")
           card.className = "discussion-response"
           const depth = Math.max(1, Number(item.depth) || 1)
-          card.style.marginInlineStart = `${Math.min(depth - 1, 3) * 24}px`
+          card.style.marginInlineStart = `${(depth - 1) * 24}px`
 
           const header = document.createElement("div")
           header.className = "discussion-response-header"
@@ -2175,7 +2175,7 @@
             latestResponses.push({
               id: null,
               parent_id: replyTarget.parentId,
-              depth: Math.min(replyTarget.depth + 1, 3),
+              depth: replyTarget.depth + 1,
               icon: null,
               name: "You",
               time: now.toISOString(),
@@ -2445,7 +2445,6 @@
 
         const progressContainer = document.createElement("div")
         progressContainer.className = "libreoffice-progress"
-        progressContainer.hidden = true
         progressContainer.setAttribute("role", "status")
 
         const progressLabel = document.createElement("span")
@@ -2454,7 +2453,7 @@
 
         const progressBar = document.createElement("progress")
         progressBar.max = 1
-        progressBar.setAttribute("aria-label", "LibreOffice download progress")
+        progressBar.setAttribute("aria-label", "Presentation preparation progress")
 
         progressContainer.append(progressLabel, progressBar)
 
@@ -2465,6 +2464,7 @@
           clearTimeout(progressTimer)
           progressContainer.hidden = true
         }, { once: true })
+        presentationFrame.src = `/api/file?url=${encodeURIComponent(fileUrl)}`
 
         let stopProgressPolling = false
         let progressTimer
@@ -2502,12 +2502,23 @@
             else if (status.state === "error") {
               progressContainer.hidden = false
               progressBar.hidden = true
-              progressLabel.textContent = "Could not download LibreOffice."
+              progressLabel.textContent = status.error
+                ? `LibreOffice error: ${status.error}`
+                : "Could not prepare LibreOffice."
             }
             else if (status.state === "ready") {
-              progressContainer.hidden = true
+              progressContainer.hidden = false
+              progressBar.hidden = false
+              progressBar.removeAttribute("value")
+              progressLabel.textContent = "Converting presentation..."
               stopProgressPolling = true
               return
+            }
+            else {
+              progressContainer.hidden = false
+              progressBar.hidden = false
+              progressBar.removeAttribute("value")
+              progressLabel.textContent = "Loading presentation..."
             }
           }
           catch (error) {
@@ -2521,7 +2532,6 @@
         presentationViewer.appendChild(presentationFrame)
         fileViewer.appendChild(presentationViewer)
         pollLibreOfficeStatus()
-        presentationFrame.src = `/api/file?url=${encodeURIComponent(fileUrl)}`
       }
       else {
         const documentIframe = document.createElement("iframe")
