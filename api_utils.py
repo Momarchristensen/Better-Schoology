@@ -213,7 +213,7 @@ def get_material_parent(material):
     links = material.get("@links", {})
     if "parent" in links:
         parent_url = links["parent"]["@id"]
-        #Example: {base_url}/v2/sections/8467781195, {base_url}/v2/sections/8467779869/folders/1018170923
+
         parsed = urlparse(parent_url)
         path_segments = parsed.path.strip("/").split("/")
 
@@ -241,16 +241,25 @@ def parse_html(text):
     return BeautifulSoup(text, "lxml")
 
 
-async def get_course_completion(course_id):
-    url = f"https://ca-net.schoology.com/course/{course_id}/materials"
-    html = await get_html(url)
+async def get_student_progress(session_token, course_id):
+    materials_url = f"https://ca-net.schoology.com/course/{course_id}/materials"
+    html = await get_html(session_token, materials_url)
 
     completion_element = html.find("a", id="folder-completion-status")
     if not completion_element:
         return None
 
-    completion_url = base_url + completion_element.get("href")
-    completion_html = await get_html(completion_url)
+    completion_url = urljoin(
+        materials_url, completion_element.get("href", "")
+    )
+    completion_html = await get_html(session_token, completion_url)
+
+    overall_status = completion_html.select_one(
+        ".status-container .user-status.progress"
+    )
+    overall_text = overall_status.get_text(strip=True) if overall_status else ""
+    overall_match = re.search(r"\d+", overall_text)
+    overall_percent = int(overall_match.group()) if overall_match else None
 
     folders = []
     for li in completion_html.select("li.folder-item"):
@@ -263,13 +272,57 @@ async def get_course_completion(course_id):
         if not title_element or not percent_element:
             continue
 
+        folder_id = li.get("id", "")
+        percent_match = re.search(
+            r"\d+", percent_element.get_text(strip=True)
+        )
+        if not folder_id.startswith("folder-") or not percent_match:
+            continue
+
+        folder_id = folder_id.removeprefix("folder-")
+        folder_items = []
+        children = completion_html.find(id=f"children-{folder_id}")
+        if children:
+            for item in children.select("li.node-item"):
+                owning_folder = item.find_parent("li", class_="folder-item")
+                if owning_folder is not li:
+                    continue
+
+                item_id = item.get("id", "")
+                if not item_id.startswith("item-"):
+                    continue
+
+                status_element = item.select_one(".item-status")
+                if not status_element:
+                    continue
+
+                status_classes = status_element.get("class", [])
+                status_text = status_element.get_text(" ", strip=True).lower()
+                if "complete" in status_classes or status_text == "complete":
+                    status = "complete"
+                elif "progress" in status_classes or "in progress" in status_text:
+                    status = "in_progress"
+                else:
+                    continue
+
+                item_title_element = item.select_one(".item-title")
+                if not item_title_element:
+                    continue
+
+                folder_items.append({
+                    "id": item_id.removeprefix("item-"),
+                    "name": item_title_element.get_text(strip=True),
+                    "status": status,
+                })
+
         folders.append({
-            "id": li["id"].removeprefix("folder-"),
+            "id": folder_id,
             "name": title_element.get_text(strip=True),
-            "percent": int(percent_element.get_text(strip=True).rstrip("%")),
+            "percent": int(percent_match.group()),
+            "items": folder_items,
         })
 
-    return folders
+    return {"folders": folders, "overall_percent": overall_percent}
 
 
 def resolve_graded_material(material):
@@ -281,7 +334,6 @@ def resolve_graded_material(material):
             tag.decompose()
 
 
-        print(soup)
         material_object["description"] = str(soup)
 
 
@@ -466,11 +518,9 @@ async def resolve_full_assignment(session_token, material):
         json_str = script_lines[2][31:-2]
 
         data = json.loads(json_str)
-        print(data)
         html = await get_html(
             session_token, base_url + list(data["s_app"]["launcher"].values())[0]["url"]
         )
-        print(html)
 
         form = html.find("form")
         action_url = form["action"]
@@ -611,7 +661,6 @@ async def resolve_full_document(session_token, material):
 
 
 async def get_draft_text(session_token, assignment_id):
-    """Fetch the current draft's raw text from the dropbox submit page, if one exists."""
     async_client.cookies.update(session_token)
     form_page_url = f"{base_url}/assignment/{assignment_id}/dropbox/submit"
     extra_headers = {
@@ -638,45 +687,10 @@ async def get_draft_text(session_token, assignment_id):
 
 
 def _to_bool(value) -> bool:
-    """The API represents booleans as the strings '0' / '1'."""
     return str(value).strip() == "1"
 
-"""
-Fetches the raw "smart search" payload and reformats it into a compact,
-readable structure: a dict of courses keyed by course id, each holding
-its own list of assignments (instead of one flat list where every
-assignment row repeats the course name/period as strings).
-"""
+
 def reformat_search_list(raw_items: list[dict]) -> dict:
-    """
-    Turn the flat raw_items list (courses + assignments + trailing
-    group markers) into:
-
-    {
-        "courses": {
-            "<course_id>": {
-                "id": int,
-                "name": str,
-                "section": str,
-                "district": str,
-                "assignments": [
-                    {
-                        "id": int,
-                        "name": str,
-                        "due": str | None,
-                        "posted": bool,
-                        "has_attachment": bool,
-                    },
-                    ...
-                ],
-            },
-            ...
-        }
-    }
-
-    Runs in a single O(n) pass using a dict keyed by course id so
-    assignments attach to their course without any nested lookups.
-    """
     courses: dict[str, dict] = {}
 
     for item in raw_items:
@@ -714,8 +728,6 @@ def reformat_search_list(raw_items: list[dict]) -> dict:
                 }
             )
 
-        # item_type in {"gp", "gc", "gg"} are trailing group markers
-        # with no useful data here, so they're skipped.
 
     return {"courses": courses}
 
@@ -800,8 +812,6 @@ PARENT_LINK_TTL_SECONDS = 15 * 60
 
 
 class TTLCache:
-    """Minimal in-memory TTL cache (single event loop, so no locking needed)."""
-
     def __init__(self, ttl_seconds, max_size=10_000):
         self.ttl = ttl_seconds
         self.max_size = max_size
@@ -1013,12 +1023,6 @@ async def save_draft(session_token, assignment_id, submission):
 
 
 async def submit_assignment(session_token, assignment_id, submission):
-    """
-    Submit (final submit) an assignment on Schoology.
-    - Expects a `session_token` cookie dict, applied to the shared async_client.
-    - Performs: GET the form page -> extract hidden tokens -> POST with op="Submit".
-    - Returns the httpx.Response from the POST (inspect .status_code / .text / .json()).
-    """
     async_client.cookies.update(session_token)
 
     form_page_url = f"{base_url}/assignment/{assignment_id}/dropbox/submit"
@@ -1060,7 +1064,6 @@ async def submit_assignment(session_token, assignment_id, submission):
 
 
 async def delete_draft(session_token, assignment_id, revision_id):
-    # matches the URL pattern: .../revision_delete/{revision_id}?destination=assignment%2F{assignment_id}%2Finfo
     async_client.cookies.update(session_token)
 
     page_url = (
@@ -1213,16 +1216,6 @@ async def submit_assignment_files(session_token, assignment_id, files, comment="
 
 
 def parse_comment_time(text):
-    """
-    Convert Schoology's comment time into an ISO 8601 string for JS `new Date()`.
-
-    Handles:
-      "Wed Oct 7, 2026 at 8:52 pm"
-      "Today at 6:56 am"
-      "Yesterday at 11:03 pm"
-
-    Returns the original text unchanged if it doesn't match a known format.
-    """
     if not text:
         return None
 
@@ -1247,13 +1240,10 @@ def parse_comment_time(text):
         return text
 
 
-# Schoology flattens replies past this depth (the captured request for a
-# reply to a level-2 comment had nested_level=3).
 MAX_NESTED_LEVEL = 3
 
 
 def _comment_depth(comment_el) -> int:
-    """1 = top-level comment, 2 = reply, ... (counts wrapping .s_comments_level divs)."""
     return len(comment_el.find_parents("div", class_="s_comments_level"))
 
 
@@ -1275,24 +1265,12 @@ def _apply_attachments(form_data, uploaded, links):
 
 
 async def get_discussion_responses(session_token, course_id, material_id):
-    """
-    Returns a flat list of comments AND replies in page order.
-
-    Extra keys vs. before:
-      - parent_id: id of the top-level comment this reply sits under (None for
-                   top-level comments). Schoology renders reply chains flat
-                   under the thread root, so this is the thread root, not
-                   necessarily the exact comment that was replied to.
-      - depth:     1 for top-level, 2+ for replies.
-    """
     url = f"{base_url}/course/{course_id}/materials/discussion/view/{material_id}"
     html = await get_html(session_token, url)
 
     comments = []
     thread_root_id = None
 
-    # Replies live in .s_comments_level blocks that are siblings of the
-    # .discussion-card, so iterate comments directly rather than cards.
     for comment in html.select("div.comment.s-js-comment-wrapper"):
         comment_id = comment.get("id", "").removeprefix("comment-") or None
         depth = _comment_depth(comment)
@@ -1303,8 +1281,6 @@ async def get_discussion_responses(session_token, course_id, material_id):
         else:
             parent_id = thread_root_id
 
-        # Look up by the comment-specific ID instead of relying on the footer's
-        # nesting: Schoology places reply footers differently from root comments.
         like_button = (
             html.find(id=f"s-like-c-{comment_id}") if comment_id else None
         )
@@ -1341,12 +1317,6 @@ async def get_discussion_responses(session_token, course_id, material_id):
 
 
 async def _upload_files(session_token, files, extra_headers):
-    """
-    Upload files to Schoology's upload service.
-    `files` is a list of {"file_name": str, "file_content": bytes, "title": str (optional)}.
-    Returns the dict expected by the `file[files]` form field:
-        {file_id: {"title": ..., "encode": True}, ...}
-    """
     upload_url = f"{base_url}/file/upload-service"
     uploaded = {}
 
@@ -1372,7 +1342,6 @@ async def _upload_files(session_token, files, extra_headers):
 
 
 def _comment_to_html(comment: str) -> str:
-    """Pass HTML through untouched; wrap plain text in <p dir="ltr"> paragraphs."""
     stripped = comment.strip()
     if stripped.startswith("<"):
         return stripped
@@ -1389,13 +1358,6 @@ async def submit_discussion_reply(
     files=None,
     links=None,
 ):
-    """
-    Reply to an existing comment (form_id = s_comment_reply_form, op = "Post Reply").
-
-    The reply form is a single hidden form on the discussion page; its `pid`
-    and `nested_level` are normally set by JS when you click "Reply", so we
-    set them ourselves.
-    """
     async_client.cookies.update(session_token)
     parent_comment_id = str(parent_comment_id)
 
@@ -1422,8 +1384,6 @@ async def submit_discussion_reply(
     if parent_el is None:
         raise RuntimeError(f"Comment {parent_comment_id} not found on discussion {material_id}")
 
-    # Every <input> in the form (node_realm_id, allow_attachments, sid,
-    # form_build_id, form_token, form_id, file[*], link-*, ...).
     form_data = {}
     for inp in form.find_all("input"):
         name = inp.get("name")
@@ -1433,8 +1393,8 @@ async def submit_discussion_reply(
     uploaded = await _upload_files(session_token, files, extra_headers) if files else {}
 
     form_data["pid"] = parent_comment_id
-    form_data["nested_level"] = str(min(_comment_depth(parent_el) + 1, MAX_NESTED_LEVEL))
-    form_data["reply"] = _comment_to_html(comment)  # <textarea name="reply">
+    form_data["nested_level"] = str(_comment_depth(parent_el) + 1)
+    form_data["reply"] = _comment_to_html(comment) 
     _apply_attachments(form_data, uploaded, links)
 
     form_data["form_id"] = "s_comment_reply_form"
@@ -1456,17 +1416,6 @@ async def submit_discussion_comment(
     links=None,
     reply_to=None,
 ):
-    """
-    Post a top-level comment, or (if reply_to is given) a reply to that comment id.
-
-    - comment:  HTML (e.g. '<p dir="ltr">...</p>') or plain text (auto-wrapped).
-    - files:    optional list of {"file_name", "file_content", "title"?} dicts,
-                same shape as submit_assignment_files.
-    - links:    optional list of up to 10 URLs (fills link-0 ... link-9).
-    - reply_to: optional parent comment id; delegates to submit_discussion_reply.
-
-    Returns the httpx.Response from the POST.
-    """
     if reply_to:
         return await submit_discussion_reply(
             session_token, course_id, material_id, reply_to, comment, files=files, links=links
@@ -1482,8 +1431,6 @@ async def submit_discussion_comment(
         "X-Requested-With": "XMLHttpRequest",
     }
 
-    # Load the discussion page to get the per-page hidden tokens
-    # (nid2, node_realm2, node_realm_id2, sid, target_DOM_id, form_token, ...)
     r = await async_client.get(page_url, headers=extra_headers)
     r.raise_for_status()
     soup = parse_html(r.text)
@@ -1501,7 +1448,6 @@ async def submit_discussion_comment(
         if name:
             form_data[name] = inp.get("value", "")
 
-    # Upload attachments first so we can reference them in file[files]
     uploaded = await _upload_files(session_token, files, extra_headers) if files else {}
 
     form_data["comment"] = _comment_to_html(comment)
@@ -1519,7 +1465,6 @@ async def submit_discussion_comment(
 
 
 def _is_liked(like_btn) -> bool:
-    """Read the current state from Schoology's Like/Unlike control."""
     if like_btn is None:
         return False
     classes = like_btn.get("class", [])
@@ -1546,7 +1491,6 @@ def _is_liked(like_btn) -> bool:
 import re
 
 def _extract_csrf(html) -> dict:
-    """Pull Schoology's CSRF token/key out of the page's inline settings JSON."""
     raw = str(html)
     token = re.search(r'"csrf_token"\s*:\s*"([^"]+)"', raw)
     key = re.search(r'"csrf_key"\s*:\s*"([^"]+)"', raw)

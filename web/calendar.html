@@ -41,7 +41,20 @@
             padding: 4px 0;
         }
 
-        .home-toolbar #assignments-search {
+        .home-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .home-toolbar-left .back-btn {
+            flex: 0 0 auto;
+            margin-bottom: 0;
+        }
+
+        .home-toolbar-left #assignments-search {
             flex: 0 1 480px;
             min-width: min(100%, 280px);
             width: min(100%, 480px);
@@ -59,10 +72,6 @@
             gap: 6px;
             min-height: 40px;
             padding: 4px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: var(--surface);
-            box-shadow: 0 2px 10px rgb(0 0 0 / 12%);
         }
 
         .page-actions .settings-link {
@@ -393,8 +402,12 @@
                 align-items: stretch;
             }
 
-            .home-toolbar #assignments-search {
-                flex-basis: 100%;
+            .home-toolbar-left {
+                flex-wrap: wrap;
+            }
+
+            .home-toolbar-left #assignments-search {
+                flex: 1 1 200px;
             }
 
             .page-actions {
@@ -503,9 +516,11 @@
 
 <body class="app-page app-page-dashboard">
     <div class="home-toolbar">
-        <div id="assignments-search"></div>
+        <div class="home-toolbar-left">
+            <a class="back-btn" data-back-button data-back-fallback="/home"></a>
+            <div id="assignments-search"></div>
+        </div>
         <nav class="page-actions" aria-label="Page actions">
-            <a class="settings-link" data-back-button data-back-fallback="/home"></a>
             <a class="settings-link" href="/home">Home</a>
             <a class="settings-link" data-settings-link href="/settings">Settings</a>
             <button type="button" id="logout-button" class="logout-button">

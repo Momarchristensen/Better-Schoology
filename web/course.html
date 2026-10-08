@@ -63,6 +63,11 @@
       min-width: 0;
       min-height: 0;
       width: 100%;
+      visibility: hidden;
+    }
+
+    .main-layout.is-ready {
+      visibility: visible;
     }
 
     .main-layout>.assignments-panel {
@@ -524,6 +529,23 @@
       transform: rotate(90deg);
     }
 
+    .material-completion-indicator {
+      display: inline-flex;
+      align-items: center;
+      margin-inline-start: 8px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .material-completion-indicator.is-complete {
+      color: #34d399;
+    }
+
+    .material-completion-indicator.is-in-progress {
+      color: #fbbf24;
+    }
+
     .materials-list {
       list-style: none;
       padding-left: 4px;
@@ -580,6 +602,98 @@
       font-size: 0.95rem;
     }
 
+    .student-progress {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .student-progress-overall {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .student-progress-label {
+      flex: 0 0 auto;
+      font-weight: 700;
+    }
+
+    .student-progress-track {
+      flex: 1 1 auto;
+      height: 9px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--soft-panel);
+    }
+
+    .student-progress-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .student-progress-percent {
+      flex: 0 0 auto;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .student-progress-folders {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .student-progress-folders summary {
+      cursor: pointer;
+    }
+
+    .student-progress-folder-list {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .student-progress-folder {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .student-progress-folder button {
+      min-width: 0;
+      overflow: hidden;
+      border: 0;
+      padding: 0;
+      background: none;
+      color: var(--link);
+      font: inherit;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .student-progress-folder button:hover {
+      text-decoration: underline;
+    }
+
+    .student-progress-folder button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .student-progress-folder span {
+      flex: 0 0 auto;
+      font-variant-numeric: tabular-nums;
+    }
+
     @keyframes pulse-color {
       0% {
         color: rgb(148 163 184 / 60%);
@@ -609,13 +723,27 @@
     </nav>
   </div>
 
-  <div class="main-layout">
+  <div class="main-layout" aria-busy="true">
     <div id="assignments-sidebar"></div>
 
     <main class="page">
       <div class="course-info">
         <h2 class="course-name" id="course-name">Loading course...</h2>
         <p class="course-subject" id="course-subject" style="display: none"></p>
+        <section class="student-progress" id="student-progress" aria-label="Student progress" hidden>
+          <div class="student-progress-overall">
+            <span class="student-progress-label">Overall progress</span>
+            <div class="student-progress-track" aria-hidden="true">
+              <div class="student-progress-fill" id="student-progress-fill"></div>
+            </div>
+            <span class="student-progress-percent" id="student-progress-percent"></span>
+          </div>
+          <details class="student-progress-folders" id="student-progress-folders">
+            <summary>Folder progress</summary>
+            <ul class="student-progress-folder-list" id="student-progress-folder-list"></ul>
+            <p id="student-progress-message" role="status" hidden></p>
+          </details>
+        </section>
       </div>
 
       <div class="page-header">
@@ -1047,6 +1175,33 @@
 
     const folderParentMap = new Map()
     const folderTitleMap = new Map()
+    let materialCompletionStatuses = new Map()
+
+    function updateMaterialCompletionIndicator(row) {
+      const status = materialCompletionStatuses.get(row.dataset.materialId)
+      let indicator = row.querySelector(".material-completion-indicator")
+
+      if (!status) {
+        indicator?.remove()
+        return
+      }
+
+      if (!indicator) {
+        indicator = document.createElement("span")
+        indicator.className = "material-completion-indicator"
+        row.querySelector(".material-title").appendChild(indicator)
+      }
+
+      const isComplete = status === "complete"
+      indicator.classList.toggle("is-complete", isComplete)
+      indicator.classList.toggle("is-in-progress", !isComplete)
+      indicator.textContent = isComplete ? "✓" : "◷"
+      indicator.title = isComplete ? "Complete" : "In progress"
+      indicator.setAttribute(
+        "aria-label",
+        isComplete ? "Complete" : "In progress",
+      )
+    }
 
     function buildPathFromFolderId(folderId) {
       if (!folderId || folderId === "root") {
@@ -1103,9 +1258,11 @@
 
         materialRow.dataset.title = material.title
         materialRow.dataset.type = material.type
+        materialRow.dataset.materialId = String(material.id)
         materialRow.dataset.originalIndex = String(
           originalOrder.get(material) ?? index,
         )
+        updateMaterialCompletionIndicator(materialRow)
 
         if (material.type === "folder") {
           materialRow.dataset.folderId = material.id
@@ -1501,9 +1658,11 @@
         const title = document.createElement("div")
         title.classList.add("material-title")
         title.textContent = material.title
+        row.dataset.materialId = String(material.id)
 
         row.appendChild(icon)
         row.appendChild(title)
+        updateMaterialCompletionIndicator(row)
 
         if (material.type === "folder") {
           row.addEventListener("click", (event) => {
@@ -1702,7 +1861,7 @@
       }
     }
 
-    main()
+    const courseReady = main()
 
     async function loadCourseDetails() {
       const nameEl = document.getElementById("course-name")
@@ -1733,7 +1892,124 @@
       }
     }
 
-    loadCourseDetails()
+    const courseDetailsReady = loadCourseDetails()
+
+    async function loadStudentProgress() {
+      const progressElement = document.getElementById("student-progress")
+      const fillElement = document.getElementById("student-progress-fill")
+      const percentElement = document.getElementById("student-progress-percent")
+      const foldersDetails = document.getElementById("student-progress-folders")
+      const folderList = document.getElementById("student-progress-folder-list")
+      const progressMessage = document.getElementById("student-progress-message")
+
+      try {
+        const data = await fetchRetry(
+          `/api/course/${encodeURIComponent(courseId)}/student-progress`,
+        )
+        if (data.status !== "ok") {
+          throw new Error(data.detail ?? data.message ?? "Could not load student progress")
+        }
+        if (!data.progress) {
+          return
+        }
+
+        const overallPercent = data.progress.overall_percent
+        if (overallPercent !== null && overallPercent !== undefined) {
+          const clampedPercent = Math.min(100, Math.max(0, Number(overallPercent) || 0))
+          fillElement.style.width = `${clampedPercent}%`
+          percentElement.textContent = `${overallPercent}%`
+          progressElement.setAttribute("aria-label", `Student progress: ${overallPercent}% overall`)
+        }
+        else {
+          document.querySelector(".student-progress-overall").hidden = true
+        }
+
+        const folders = Array.isArray(data.progress.folders)
+          ? data.progress.folders
+          : []
+        materialCompletionStatuses = new Map(
+          Object.entries(data.material_statuses || {}),
+        )
+        document.querySelectorAll("[data-material-id]").forEach(
+          updateMaterialCompletionIndicator,
+        )
+        for (const folder of folders) {
+          const item = document.createElement("li")
+          item.className = "student-progress-folder"
+          const name = document.createElement("button")
+          name.type = "button"
+          name.textContent = folder.name
+          name.addEventListener("click", async () => {
+            name.disabled = true
+            progressMessage.hidden = true
+            try {
+              await courseReady
+              const structureResponse = await fetchRetry(
+                `/api/parent_structure?section_id=${encodeURIComponent(courseId)}&folder_id=${encodeURIComponent(folder.id)}`,
+              )
+              if (structureResponse.status !== "ok") {
+                throw new Error(
+                  structureResponse.message ?? "Could not locate the folder",
+                )
+              }
+
+              const folderPath = [{ id: "root", title: "Course Materials" }]
+              for (const parentFolder of structureResponse.structure || []) {
+                folderPath.push({
+                  id: getStructureFolderId(parentFolder),
+                  title: parentFolder.title,
+                })
+              }
+
+              if (folderPath[folderPath.length - 1].id !== String(folder.id)) {
+                folderPath.push({ id: String(folder.id), title: folder.name })
+              }
+
+              if (viewMode === "explorer") {
+                navigateExplorerTo(folderPath)
+              }
+              else {
+                await syncTreeToPath(folderPath)
+                updateCourseUrl(folder.id, "tree")
+              }
+            }
+            catch (error) {
+              console.error("Could not open progress folder:", error)
+              progressMessage.textContent = "Could not open this folder. Please try again."
+              progressMessage.hidden = false
+            }
+            finally {
+              name.disabled = false
+            }
+          })
+          const percent = document.createElement("span")
+          percent.textContent = `${folder.percent}%`
+          item.append(name, percent)
+          folderList.appendChild(item)
+        }
+
+        if (!folders.length) {
+          foldersDetails.hidden = true
+        }
+        progressElement.hidden = false
+      }
+      catch (error) {
+        console.error("Could not load student progress:", error)
+      }
+    }
+
+    const studentProgressReady = loadStudentProgress()
+    const mainLayout = document.querySelector(".main-layout")
+    Promise.all([courseReady, courseDetailsReady, studentProgressReady])
+      .then(() => {
+        mainLayout.classList.add("is-ready")
+        mainLayout.setAttribute("aria-busy", "false")
+      })
+      .catch((error) => {
+        console.error("Could not finish loading the course page:", error)
+        mainLayout.classList.add("is-ready")
+        mainLayout.setAttribute("aria-busy", "false")
+      })
   </script>
 
   <template id="material-template">

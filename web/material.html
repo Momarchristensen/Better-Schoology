@@ -396,16 +396,14 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 12px;
-      margin-right: 8px;
-      width: 36px;
-      height: 36px;
+      min-height: 36px;
+      padding: 8px 14px;
       border-radius: 12px;
       background: var(--surface-strong);
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: 1.1rem;
-      line-height: 1;
+      font-size: 0.9rem;
+      font-weight: 600;
       text-decoration: none;
       transition:
         background 0.18s ease,
@@ -1427,8 +1425,8 @@
   <div class="page">
     <div class="header">
       <div class="header-toolbar">
-        <a class="home-btn" href="/home" title="Home" aria-label="Home">&#8962;</a>
         <a class="back-btn" data-back-button></a>
+        <a class="home-btn" href="/home" title="Home" aria-label="Home">Home</a>
         <a id="course-btn" class="back-btn" href="#">Course</a>
         <div id="assignments-search"></div>
         <a class="settings-link" data-settings-link href="/settings">Settings</a>

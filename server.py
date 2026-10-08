@@ -45,6 +45,7 @@ from api_utils import (
     submit_assignment_files,
     get_section,
     get_discussion_responses,
+    get_student_progress,
     submit_discussion_comment,
     submit_discussion_reply,
     set_comment_like,
@@ -55,7 +56,10 @@ from app_updater import check_for_updates
 
 if getattr(sys, "frozen", False):
     resource_dir = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
-    data_dir = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") / "Better-Schoology"
+    data_dir = (
+        Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
+        / "Better-Schoology"
+    )
 else:
     resource_dir = Path(__file__).resolve().parent
     data_dir = resource_dir
@@ -91,7 +95,6 @@ RESOURCES_DIR.mkdir(parents=True, exist_ok=True)
 
 CACHE_DIR = data_dir / "cached_files"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
 
 
 PORT = 3498
@@ -136,6 +139,7 @@ DOCX_HTML_TEMPLATE = """<!DOCTYPE html>
 
 _lo_lock = threading.Lock()
 lo_status = {"state": "idle", "progress": 0.0, "error": None}
+
 
 def parse_session_cookie(cookie_value: Optional[str]):
     if not cookie_value:
@@ -285,7 +289,6 @@ def serve_cached(meta: dict):
 
 def libreoffice_installed() -> bool:
     return SOFFICE_PATH.exists()
-
 
 
 import certifi
@@ -579,9 +582,13 @@ async def api_attachments_zip(request: Request):
             for index, url in enumerate(urls, start=1):
                 response = await client.get(url)
                 if response.status_code >= 400:
-                    raise HTTPException(status_code=400, detail="Failed to fetch attachment")
+                    raise HTTPException(
+                        status_code=400, detail="Failed to fetch attachment"
+                    )
 
-                filename = extract_filename(url, response.headers) or f"attachment-{index}"
+                filename = (
+                    extract_filename(url, response.headers) or f"attachment-{index}"
+                )
                 filename = Path(filename).name or f"attachment-{index}"
                 stem = Path(filename).stem
                 suffix = Path(filename).suffix
@@ -621,6 +628,34 @@ async def api_section_details(request: Request, section_id: str):
     section = await get_section(token, section_id)
 
     return {"status": "ok", "section": section}
+
+
+@app.get("/api/course/{course_id}/student-progress")
+async def api_student_progress(request: Request, course_id: str):
+    token = parse_session_cookie(request.cookies.get("sessionToken"))
+    if not token:
+        raise HTTPException(status_code=401, detail="No session token")
+
+    try:
+        progress = await get_student_progress(token, course_id)
+        material_statuses = (
+            {
+                item["id"]: item["status"]
+                for folder in progress["folders"]
+                for item in folder["items"]
+            }
+            if progress
+            else {}
+        )
+        return {
+            "status": "ok",
+            "progress": progress,
+            "material_statuses": material_statuses,
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502, detail=f"Could not load student progress: {exc}"
+        ) from exc
 
 
 @app.get("/api/section/{full_path:path}")
@@ -669,7 +704,6 @@ def _get_whisper_model():
     if _whisper_model is None:
         from faster_whisper import WhisperModel
 
-        # "base" is fast; use "small" or "medium" for better accuracy.
         _whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
     return _whisper_model
 
@@ -706,7 +740,6 @@ def generate_vtt(media_bytes: bytes, suffix: str, on_progress=None) -> str:
                 lines.append("")
 
         return "\n".join(lines)
-
 
 
 _caption_jobs: dict[str, dict] = {}
@@ -754,7 +787,6 @@ async def _run_caption_job(job_id: str, token: dict, url: str):
         job.update(status="done", progress=1.0)
     except Exception as exc:
         job.update(status="error", error=str(exc))
-
 
 
 @app.api_route("/captions", methods=["GET", "POST"])
@@ -818,22 +850,24 @@ async def api_captions(request: Request):
     )
 
 
-
-
 @app.get("/captions/start")
 async def captions_start(request: Request, url: str):
     token = parse_session_cookie(request.cookies.get("sessionToken"))
     if not token:
         raise HTTPException(status_code=401, detail="No session token")
 
-    job_id = "captions-" + get_cache_key(url)  # same key /captions uses for its cache
+    job_id = "captions-" + get_cache_key(url)
 
     if read_cache(job_id):
         return {"job": job_id, "status": "done", "progress": 1.0}
 
     job = _caption_jobs.get(job_id)
     if not job or job["status"] == "error":
-        _caption_jobs[job_id] = {"status": "downloading", "progress": 0.0, "error": None}
+        _caption_jobs[job_id] = {
+            "status": "downloading",
+            "progress": 0.0,
+            "error": None,
+        }
         task = asyncio.create_task(_run_caption_job(job_id, token, url))
         _background_tasks.add(task)
         task.add_done_callback(_background_tasks.discard)
@@ -852,7 +886,6 @@ async def captions_status(request: Request, job: str):
             return {"status": "done", "progress": 1.0, "error": None}
         raise HTTPException(status_code=404, detail="Unknown job")
     return info
-
 
 
 @app.get("/api/parent_structure")
@@ -1173,6 +1206,7 @@ async def home_page(request: Request):
 
     return serve_html_file("home.html")
 
+
 @app.get("/calendar")
 async def calendar_page(request: Request):
     token = parse_session_cookie(request.cookies.get("sessionToken"))
@@ -1181,11 +1215,15 @@ async def calendar_page(request: Request):
     return serve_html_file("calendar.html")
 
 
-
-
 def _ics_text(s) -> str:
-    return (str(s).replace("\\", "\\\\").replace(";", "\\;")
-            .replace(",", "\\,").replace("\n", "\\n"))
+    return (
+        str(s)
+        .replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\n", "\\n")
+    )
+
 
 @app.get("/api/calendar.ics")
 async def api_calendar_ics(request: Request):
@@ -1197,13 +1235,13 @@ async def api_calendar_ics(request: Request):
     now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Better Schoology//EN"]
     for m in materials:
-        due = datetime.fromisoformat(str(m["dueDate"]))         # <-- adjust key and format
+        due = datetime.fromisoformat(str(m["dueDate"]))
         if due.tzinfo is None:
-            due = due.astimezone()                           # treat naive times as local
+            due = due.astimezone()
         due = due.astimezone(timezone.utc)
         lines += [
             "BEGIN:VEVENT",
-            f"UID:{m['id']}@better-schoology",                # <-- adjust key
+            f"UID:{m['id']}@better-schoology",
             f"DTSTAMP:{now}",
             f"DTSTART:{due.strftime('%Y%m%dT%H%M%SZ')}",
             f"DTEND:{(due + timedelta(minutes=30)).strftime('%Y%m%dT%H%M%SZ')}",
@@ -1216,6 +1254,7 @@ async def api_calendar_ics(request: Request):
         media_type="text/calendar",
         headers={"Content-Disposition": 'attachment; filename="schoology.ics"'},
     )
+
 
 @app.get("/settings")
 async def settings_page(request: Request):

@@ -14,14 +14,27 @@
   <style>
     .home-toolbar {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
       width: 100%;
     }
 
-    .home-toolbar #assignments-search {
+    .home-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .home-toolbar-left .back-btn {
+      flex: 0 0 auto;
+      margin-bottom: 0;
+    }
+
+    .home-toolbar-left #assignments-search {
       flex: 0 1 480px;
       min-width: 0;
       width: min(100%, 480px);
@@ -29,6 +42,7 @@
 
     .home-toolbar .search-bar {
       max-width: none;
+      margin: 0;
     }
 
     .page-actions {
@@ -212,6 +226,14 @@
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       }
 
+      .home-toolbar-left {
+        flex-wrap: wrap;
+      }
+
+      .home-toolbar-left #assignments-search {
+        flex: 1 1 200px;
+      }
+
       .home-toolbar .page-actions {
         margin-left: auto;
       }
@@ -221,10 +243,12 @@
 
 <body class="app-page app-page--dashboard">
   <div class="home-toolbar">
-    <div id="assignments-search"></div>
+    <div class="home-toolbar-left">
+      <a class="back-btn" data-back-button></a>
+      <div id="assignments-search"></div>
+    </div>
 
     <nav class="page-actions" aria-label="Page actions">
-      <a class="settings-link" data-back-button></a>
       <a class="settings-link" href="/calendar">Calendar</a>
       <a class="settings-link" data-settings-link href="/settings">Settings</a>
       <button type="button" id="logout-button" class="logout-button">
