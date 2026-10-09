@@ -104,13 +104,13 @@ PORT = 3498
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    libreoffice_task = asyncio.create_task(
-        _install_libreoffice_on_startup(), name="install-libreoffice"
+    install_thread = threading.Thread(
+        target=_install_libreoffice_on_startup,
+        name="install-libreoffice",
+        daemon=True,
     )
-    try:
-        yield
-    finally:
-        await libreoffice_task
+    install_thread.start()
+    yield
 
 
 app = FastAPI(lifespan=lifespan)
@@ -401,7 +401,14 @@ def ensure_libreoffice():
             with zipfile.ZipFile(zip_path) as zf:
                 zf.extractall(extract_dir)
 
-            os.replace(extract_dir, LIBREOFFICE_DIR)
+            try:
+                os.replace(extract_dir, LIBREOFFICE_DIR)
+            except OSError:
+                # Another server process may have completed this install first.
+                if not libreoffice_installed():
+                    raise
+                shutil.rmtree(extract_dir, ignore_errors=True)
+
             lo_status.update(state="ready", progress=1.0)
         except Exception as exc:
             lo_status.update(state="error", error=str(exc))
@@ -411,13 +418,13 @@ def ensure_libreoffice():
             zip_path.unlink(missing_ok=True)
 
 
-async def _install_libreoffice_on_startup():
+def _install_libreoffice_on_startup():
     if libreoffice_installed():
         lo_status.update(state="ready", progress=1.0, error=None)
         return
 
     try:
-        await run_in_threadpool(ensure_libreoffice)
+        ensure_libreoffice()
     except Exception as exc:
         print(f"LibreOffice startup installation failed: {exc}", file=sys.stderr)
 
