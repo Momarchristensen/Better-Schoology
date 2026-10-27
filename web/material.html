@@ -872,21 +872,21 @@
       overflow-wrap: anywhere;
     }
 
-.discussion-response-like {
-  margin-top: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-strong);
-  padding: 5px 10px;
-  cursor: pointer;
-  font: inherit;
-}
+    .discussion-response-like {
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-strong);
+      padding: 5px 10px;
+      cursor: pointer;
+      font: inherit;
+    }
 
-.discussion-response-like:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+    .discussion-response-like:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
     .discussion-response-like[aria-pressed="true"] {
       color: var(--accent);
@@ -1920,6 +1920,11 @@
                 const htmlClone = htmlTemplate.content.cloneNode(true)
                 const viewer = htmlClone.querySelector(".submission-viewer")
                 viewer.innerHTML = result.html
+
+                for (const base of viewer.querySelectorAll("base")) {
+                  base.remove()
+                }
+
                 content.appendChild(htmlClone)
               }
               else {
