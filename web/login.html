@@ -91,6 +91,68 @@
       text-align: center;
       color: var(--muted);
     }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+      filter: grayscale(40%);
+      transform: none;
+    }
+
+    button:disabled:hover {
+      filter: grayscale(40%);
+      transform: none;
+    }
+
+    .message.is-success,
+    .message.is-error {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 700;
+      animation: message-pop 0.35s ease;
+    }
+
+    .message.is-success {
+      color: #22c55e;
+      background: rgb(34 197 94 / 14%);
+      border: 1px solid rgb(34 197 94 / 45%);
+    }
+
+    .message.is-error {
+      color: #ef4444;
+      background: rgb(239 68 68 / 12%);
+      border: 1px solid rgb(239 68 68 / 40%);
+    }
+
+    button.is-success,
+    button.is-success:disabled {
+      background: linear-gradient(180deg, #22c55e, #16a34a);
+      box-shadow: 0 10px 24px rgb(34 197 94 / 35%);
+      opacity: 1;
+      filter: none;
+    }
+
+    @keyframes message-pop {
+      from {
+        opacity: 0;
+        transform: scale(0.94) translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      .message.is-success,
+      .message.is-error {
+        animation: none;
+      }
+    }
   </style>
 </head>
 
@@ -111,54 +173,70 @@
 
   <script>
     const form = document.getElementById("loginForm")
-const messageTextElement = document.getElementById("message")
-const submitButton = document.getElementById("submitButton")
+    const messageTextElement = document.getElementById("message")
+    const submitButton = document.getElementById("submitButton")
 
-form.addEventListener("submit", async function (event) {
+    function showMessage(text, type) {
+      messageTextElement.textContent = text
+      messageTextElement.classList.remove("is-success", "is-error")
+      if (type) {
+        messageTextElement.classList.add(`is-${type}`)
+      }
+    }
+
+    function resetButton() {
+      submitButton.disabled = false
+      submitButton.textContent = "Sign In"
+    }
+
+    form.addEventListener("submit", async function (event) {
       event.preventDefault()
 
-  const email = document.getElementById("email").value
-  const password = document.getElementById("password").value
+      const email = document.getElementById("email").value
+      const password = document.getElementById("password").value
 
-  submitButton.disabled = true
-  submitButton.textContent = "Signing in..."
-  messageTextElement.textContent = "Logging in..."
+      submitButton.disabled = true
+      submitButton.textContent = "Signing in..."
+      showMessage("Logging in...", null)
 
-  try {
+      try {
         const response = await fetchWithRetry("/api/get_token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         })
 
-    const data = await response.json()
+        const data = await response.json()
 
-    if (data.status === "ok") {
-          messageTextElement.textContent = "Login successful!"
-      const nextPath = new URLSearchParams(window.location.search).get(
+        if (data.status === "ok") {
+          showMessage("✓ Login successful! Redirecting...", "success")
+          submitButton.textContent = "✓ Success"
+          submitButton.classList.add("is-success")
+          form.querySelectorAll("input").forEach((input) => {
+            input.disabled = true
+          })
+
+          const nextPath = new URLSearchParams(window.location.search).get(
             "next",
           )
-      if (
-            nextPath &&        nextPath.startsWith("/") &&        !nextPath.startsWith("//")
-          ) {
-            window.location.href = nextPath
-      }
- else {
-            window.location.href = "/home"
-      }
-        }
- else {
-          messageTextElement.textContent = `Error: ${data.message}`
-    }
+          const destination
+            = nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+              ? nextPath
+              : "/home"
 
-        submitButton.disabled = false
-    submitButton.textContent = "Sign In"
-  }
- catch (error) {
-        messageTextElement.textContent = `Network error: ${error.message}`
-    submitButton.disabled = false
-    submitButton.textContent = "Sign In"
-  }
+          setTimeout(() => {
+            window.location.href = destination
+          }, 800)
+        }
+        else {
+          showMessage(`Error: ${data.message}`, "error")
+          resetButton()
+        }
+      }
+      catch (error) {
+        showMessage(`Network error: ${error.message}`, "error")
+        resetButton()
+      }
     })
   </script>
 </body>

@@ -20,44 +20,97 @@
       --late-text: #ff8a8a;
     }
 
+    body.app-page--material {
+      padding: 20px 24px;
+    }
+
     .page {
-      width: min(1200px, calc(100% - 32px));
+      width: min(1200px, 100%);
       margin: 0 auto;
-      padding: 24px 0 40px;
+      padding: 0 0 40px;
     }
 
     .header {
       margin-bottom: 18px;
     }
 
-    .header-toolbar {
+    .material-toolbar {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
+      justify-content: space-between;
       gap: 12px;
-      margin-bottom: 12px;
+      flex-wrap: wrap;
+      width: 100%;
+      margin-bottom: 18px;
     }
 
-    .header-toolbar .back-btn,
-    .header-toolbar .home-btn,
-    .header-toolbar .settings-link {
+    .material-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .material-toolbar .back-btn {
+      flex: 0 0 auto;
       margin-bottom: 0;
     }
 
-    .header-toolbar #assignments-search {
+    .material-toolbar #assignments-search {
       flex: 0 1 480px;
       min-width: 0;
       width: min(100%, 480px);
     }
 
-    .header-toolbar .search-bar {
+    .material-toolbar .search-bar {
       max-width: none;
       margin: 0;
     }
 
+    .material-toolbar .page-actions {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 36px;
+      margin-bottom: 4px;
+    }
+
+    @media (width <=720px) {
+      body.app-page--material {
+        padding: 16px;
+      }
+
+      .material-toolbar-left {
+        flex-wrap: wrap;
+      }
+
+      .material-toolbar-left #assignments-search {
+        flex: 1 1 200px;
+      }
+
+      .material-toolbar .page-actions {
+        margin-left: auto;
+      }
+    }
+
     @media (width <=480px) {
-      .header-toolbar #assignments-search {
+
+      .material-toolbar,
+      .material-toolbar-left {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .material-toolbar-left,
+      .material-toolbar #assignments-search {
         flex: 0 0 auto;
+        width: 100%;
+      }
+
+      .material-toolbar .back-btn,
+      .material-toolbar .page-actions {
         width: 100%;
       }
     }
@@ -754,6 +807,7 @@
       .app-page {
         background: #fff !important;
         color: #000 !important;
+        padding: 0 !important;
       }
 
       .page {
@@ -762,9 +816,7 @@
         padding: 0;
       }
 
-      .header .home-btn,
-      .header .back-btn,
-      .header .settings-link,
+      .material-toolbar,
       #assignments-search,
       .submission-modal-overlay,
       .due-date-countdown,
@@ -1406,9 +1458,6 @@
     @media (width <=640px) {
       .page {
         width: 100%;
-        padding-top: 16px;
-        padding-left: 12px;
-        padding-right: 12px;
       }
 
       .panels {
@@ -1447,15 +1496,24 @@
 </head>
 
 <body class="app-page app-page--material">
+  <div class="material-toolbar">
+    <div class="material-toolbar-left">
+      <a class="back-btn" data-back-button></a>
+      <div id="assignments-search"></div>
+    </div>
+
+    <nav class="page-actions" aria-label="Page actions">
+      <a class="settings-link" href="/home">Home</a>
+      <a id="course-btn" class="settings-link" href="#">Course</a>
+      <a class="settings-link" data-settings-link href="/settings">Settings</a>
+      <button type="button" id="logout-button" class="logout-button" data-logout-button>
+        Log out
+      </button>
+    </nav>
+  </div>
+
   <div class="page">
     <div class="header">
-      <div class="header-toolbar">
-        <a class="back-btn" data-back-button></a>
-        <a class="home-btn" href="/home" title="Home" aria-label="Home">Home</a>
-        <a id="course-btn" class="back-btn" href="#">Course</a>
-        <div id="assignments-search"></div>
-        <a class="settings-link" data-settings-link href="/settings">Settings</a>
-      </div>
       <h2 id="title"></h2>
     </div>
 
@@ -1488,7 +1546,6 @@
 
     const backHref = folderId && folderId !== "root" ? `/section/${sectionId}?folder=${encodeURIComponent(folderId)}` : `/section/${sectionId}`
 
-    document.querySelector("[data-back-button]").dataset.backFallback = backHref
     document.getElementById("course-btn").href = backHref;
 
     ["dragover", "drop"].forEach((eventName) => {

@@ -21,24 +21,19 @@
             box-sizing: border-box;
         }
 
-        .app-page-dashboard {
+        body.app-page--dashboard {
             height: 100vh;
             height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
         }
 
         .home-toolbar {
-            flex: 0 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
+            gap: 12px;
             flex-wrap: wrap;
-            width: min(100%, 1500px);
-            margin: 0 auto 12px;
-            padding: 4px 0;
+            width: 100%;
+            padding-bottom: 10px;
         }
 
         .home-toolbar-left {
@@ -56,7 +51,7 @@
 
         .home-toolbar-left #assignments-search {
             flex: 0 1 480px;
-            min-width: min(100%, 280px);
+            min-width: 0;
             width: min(100%, 480px);
         }
 
@@ -69,23 +64,9 @@
             display: flex;
             flex: 0 0 auto;
             align-items: center;
-            gap: 6px;
-            min-height: 40px;
-            padding: 4px;
-        }
-
-        .page-actions .settings-link {
-            display: inline-flex;
-            align-items: center;
-            min-height: 34px;
-            padding: 6px 11px;
-            border-radius: 8px;
-            text-decoration: none;
-        }
-
-        .page-actions .settings-link:hover,
-        .page-actions .settings-link:focus-visible {
-            background: var(--surface-strong);
+            gap: 12px;
+            min-height: 36px;
+            margin-bottom: 4px;
         }
 
         h1,
@@ -96,8 +77,7 @@
 
         .main-layout {
             flex: 1 1 auto;
-            width: min(100%, 1500px);
-            margin: 0 auto;
+            width: 100%;
             display: flex;
             flex-direction: row;
             gap: 18px;
@@ -370,38 +350,7 @@
             background-clip: padding-box;
         }
 
-        .logout-button {
-            background: transparent;
-            border: 0;
-            border-radius: 8px;
-            color: #d93025;
-            cursor: pointer;
-            font: inherit;
-            font-weight: 600;
-            min-height: 34px;
-            padding: 6px 11px;
-            transition:
-                color var(--motion-duration) var(--motion-easing),
-                background var(--motion-duration) var(--motion-easing);
-        }
-
-        .logout-button:hover,
-        .logout-button:focus-visible {
-            color: #b3261e;
-            background: rgb(211 48 37 / 10%);
-            outline: none;
-        }
-
-        .logout-button:disabled {
-            opacity: 0.6;
-            cursor: default;
-        }
-
         @media (width <=900px) {
-            .home-toolbar {
-                align-items: stretch;
-            }
-
             .home-toolbar-left {
                 flex-wrap: wrap;
             }
@@ -410,9 +359,8 @@
                 flex: 1 1 200px;
             }
 
-            .page-actions {
-                width: 100%;
-                justify-content: flex-end;
+            .home-toolbar .page-actions {
+                margin-left: auto;
             }
         }
 
@@ -425,26 +373,6 @@
 
             .calendar-grid {
                 min-height: 320px;
-            }
-
-            .home-toolbar,
-            .main-layout {
-                width: 100%;
-            }
-
-            .home-toolbar {
-                margin-bottom: 10px;
-            }
-
-            .page-actions {
-                justify-content: stretch;
-            }
-
-            .page-actions .settings-link,
-            .logout-button {
-                flex: 1;
-                justify-content: center;
-                text-align: center;
             }
 
             .calendar-section {
@@ -502,8 +430,7 @@
             .calendar-button,
             .calendar-export,
             .calendar-item,
-            .calendar-day,
-            .logout-button {
+            .calendar-day {
                 transition: none;
             }
 
@@ -514,16 +441,16 @@
     </style>
 </head>
 
-<body class="app-page app-page-dashboard">
+<body class="app-page app-page--dashboard">
     <div class="home-toolbar">
         <div class="home-toolbar-left">
-            <a class="back-btn" data-back-button data-back-fallback="/home"></a>
+            <a class="back-btn" data-back-button></a>
             <div id="assignments-search"></div>
         </div>
         <nav class="page-actions" aria-label="Page actions">
             <a class="settings-link" href="/home">Home</a>
             <a class="settings-link" data-settings-link href="/settings">Settings</a>
-            <button type="button" id="logout-button" class="logout-button">
+            <button type="button" id="logout-button" class="logout-button" data-logout-button>
                 Log out
             </button>
         </nav>
@@ -690,25 +617,6 @@
             )
             renderCalendar()
         }
-        async function logout() {
-            const button = document.getElementById("logout-button")
-            button.disabled = true
-            try {
-                const response = await fetch("/api/logout", {
-                    method: "POST",
-                })
-                const data = await response.json()
-                if (data.status === "ok") {
-                    window.location.href = "/login"
-                    return
-                }
-                console.error("Logout failed:", data.message)
-            }
-            catch (error) {
-                console.error("Error logging out:", error)
-            }
-            button.disabled = false
-        }
         document
             .getElementById("prev-month")
             .addEventListener("click", () => changeMonth(-1))
@@ -719,9 +627,6 @@
             viewDate = startOfMonth(new Date())
             renderCalendar()
         })
-        document
-            .getElementById("logout-button")
-            .addEventListener("click", logout)
     </script>
     <template id="day-template">
         <div class="calendar-day">

@@ -192,7 +192,7 @@
 
 <body class="app-page app-page--settings">
   <main class="settings-page">
-  <a class="back-btn" data-back-button data-back-fallback="/home"></a>
+  <a class="back-btn" data-back-button></a>
   <header class="settings-header">
     <div>
       <h1>Settings</h1>
@@ -302,8 +302,6 @@ const safeReturnPath = window.toSafeAppPath(returnPath) || "/home"
 
 returnLink.href = safeReturnPath
 if (safeReturnPath !== "/home") returnLink.textContent = "Return"
-
-document.querySelector("[data-back-button]").dataset.backFallback = safeReturnPath
 
 function readSetting(key, fallback) {
       try {

@@ -101,3 +101,33 @@ document.addEventListener("DOMContentLoaded", () => {
     applyStoredSettings()
     updateSettingsLinks()
 })
+
+async function logout(button) {
+    button.disabled = true
+
+    try {
+        const response = await fetch("/api/logout", {
+            method: "POST",
+        })
+
+        const data = await response.json()
+
+        if (data.status === "ok") {
+            window.location.href = "/login"
+            return
+        }
+
+        console.error("Logout failed:", data.message)
+    }
+    catch (error) {
+        console.error("Error logging out:", error)
+    }
+
+    button.disabled = false
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("[data-logout-button]").forEach((button) => {
+        button.addEventListener("click", () => logout(button))
+    })
+})

@@ -50,8 +50,9 @@
       display: flex;
       flex: 0 0 auto;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       min-height: 36px;
+      margin-bottom: 4px;
     }
 
     .main-layout {
@@ -713,13 +714,16 @@
 <body class="app-page app-page--content">
   <div class="course-toolbar">
     <div class="course-toolbar-left">
-      <a class="back-btn" data-back-button data-back-fallback="/home"></a>
-      <a href="/home" class="back-btn">Home</a>
+      <a class="back-btn" data-back-button></a>
       <div id="assignments-search"></div>
     </div>
 
     <nav class="page-actions" aria-label="Page actions">
+      <a class="settings-link" href="/home">Home</a>
       <a class="settings-link" data-settings-link href="/settings">Settings</a>
+      <button type="button" id="logout-button" class="logout-button" data-logout-button>
+        Log out
+      </button>
     </nav>
   </div>
 

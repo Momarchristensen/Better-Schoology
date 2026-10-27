@@ -1,7 +1,7 @@
 :root {
     --bg: #0b0f17;
     --bg-strong: #04070d;
-    --surface: rgb(255 255 255 / 4%);
+    --surface: rgb(255 255 255 / 10%);
     --surface-strong: rgb(255 255 255 / 8%);
     --surface-soft: rgb(255 255 255 / 3%);
     --border: rgb(148 163 184 / 18%);
@@ -136,6 +136,28 @@ button:disabled {
     transform: translateY(-1px);
 }
 
+.logout-button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: #d93025;
+    cursor: pointer;
+    font: inherit;
+    padding: 6px 12px;
+    transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.logout-button:hover,
+.logout-button:focus-visible {
+    color: #b3261e;
+    border-color: #b3261e;
+}
+
+.logout-button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
 [data-reduced-motion="true"] {
     --motion-duration-fast: 0s;
     --motion-duration: 0s;
@@ -155,6 +177,7 @@ body[data-show-assignments="false"] #assignments-sidebar {
 }
 
 @media (max-width: 720px) {
+
     body.app-page--dashboard,
     body.app-page--content {
         height: auto;
@@ -211,5 +234,32 @@ body[data-show-assignments="false"] #assignments-sidebar {
 [data-back-button][aria-disabled="true"] {
     opacity: 0.45;
     pointer-events: none;
+    cursor: default;
+}
+
+
+
+
+.logout-button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: #f65448;
+    cursor: pointer;
+    font: inherit;
+    padding: 6px 12px;
+    transition:
+        color 0.25s ease,
+        border-color 0.25s ease;
+}
+
+.logout-button:hover,
+.logout-button:focus-visible {
+    color: #b3261e;
+    border-color: #b3261e;
+}
+
+.logout-button:disabled {
+    opacity: 0.6;
     cursor: default;
 }
